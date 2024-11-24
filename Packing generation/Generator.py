@@ -5,13 +5,13 @@ rng = np.random.default_rng()
 #import parameters as params
 
 #Parameters
-xSize = 10 #Length
-ySize = 10 #Width 
+xSize = 5 #Length
+ySize = 5 #Width 
 zSize = 20 #Height
 margin = 0.04
 steady_state_margin = 0.0001
-max_steady_state_iterations = 1000
-particle_number = 20
+max_steady_state_iterations = 100
+particle_number = 10
 shift_interval = 5
 size_mean = 0.6,
 size_std = 0
@@ -56,38 +56,6 @@ def generate_box():
     bpy.context.object.rigid_body.collision_shape = 'MESH'
     bpy.context.object.rigid_body.collision_margin = margin
 
-#Bad function, doesn't work because of passive select
-def generate_box2():
-    verts = [
-        (xSize / 2, ySize / 2, 0),
-        (-xSize / 2, ySize / 2, 0),
-        (-xSize / 2, -ySize / 2, 0),
-        (xSize / 2, -ySize / 2, 0),
-        (xSize / 2, ySize / 2, zSize),
-        (-xSize / 2, ySize / 2, zSize),
-        (-xSize / 2, -ySize / 2, zSize),
-        (xSize / 2, -ySize / 2, zSize)
-    ]
-    edges = []
-    faces = [
-        (0, 1, 2, 3),
-        (0, 4, 5, 1),
-        (1, 5, 6, 2),
-        (2, 6, 7, 3),
-        (3, 7, 4, 0)
-    ]
-
-    mesh_data = bpy.data.meshes.new("box_data")
-    mesh_data.from_pydata(verts, edges, faces)
-
-    mesh_obj = bpy.data.objects.new("Box", mesh_data)
-    bpy.context.collection.objects.link(mesh_obj)
-
-    bpy.ops.object.select_pattern(pattern="Box")
-    bpy.ops.rigidbody.object_add(type='ACTIVE')
-    bpy.context.object.rigid_body.type = 'PASSIVE'
-    bpy.context.object.rigid_body.collision_margin = margin
-
 def random_location(n):
     x = rng.uniform(-(xSize / 2 - 1), xSize / 2 - 1)
     y = rng.uniform(-(ySize / 2 - 1), ySize / 2 - 1)
@@ -114,26 +82,26 @@ def periodic_shift():
     bpy.ops.object.select_pattern(pattern="Cube.*copy*", extend=False)
     bpy.ops.object.delete(use_global=False)
     
+    bpy.context.view_layer.update()    
     bpy.ops.object.select_pattern(pattern="Cube.*", extend=False)
     for obj in bpy.context.selected_objects:
-
+        obj.rigid_body.type = 'PASSIVE'
         loc = obj.location
         rot = obj.rotation_euler
-        name = obj.name
-
+        name = obj.name 
+        print(loc)
         xOld, yOld, zOld = loc
 
         #New location for particles on the inside
         loc.x -= np.sign(xOld) * xSize / 2
         loc.y -= np.sign(yOld) * ySize / 2
+        print(loc)
 
         x_wall_distance = np.abs(np.abs(loc.x) - xSize / 2) - margin
         y_wall_distance = np.abs(np.abs(loc.y) - ySize / 2) - margin
 
         #Particles close to wall are passive
-        if x_wall_distance < 1 or y_wall_distance < 1:
-            obj.rigid_body.type = 'PASSIVE'
-        else:
+        if not (x_wall_distance < 1 or y_wall_distance < 1):
             obj.rigid_body.type = 'ACTIVE'
 
         #Copy wall particles to obtain periodicity
@@ -149,6 +117,47 @@ def periodic_shift():
             generate_particle(size = 0.6, location = (loc.x + np.sign(xOld) * xSize, loc.y + np.sign(yOld) * ySize, loc.z), rotation = rot, type = "PASSIVE")
             bpy.context.object.name = obj.name + ".copyXY"
 
+def periodic_shift2():
+    #Delete previous copies
+    bpy.ops.object.select_pattern(pattern="Cube.*copy*", extend=False)
+    bpy.ops.object.delete(use_global=False)
+    
+    bpy.ops.object.select_pattern(pattern="Cube.*", extend=False)
+    for obj in bpy.context.selected_objects:
+
+        loc = obj.matrix_world.translation
+        rot = obj.rotation_euler
+        name = obj.name
+        
+        bpy.ops.object.select_pattern(pattern=name, extend=False)
+        bpy.ops.object.delete(use_global=False)
+
+        #New location for particles on the inside
+        x_wall_distance = np.abs(np.abs(loc.x)) - margin
+        y_wall_distance = np.abs(np.abs(loc.y)) - margin
+
+        #Particles close to wall are passive
+        if x_wall_distance < 1 or y_wall_distance < 1:
+            generate_particle(size = 0.6, location = (loc.x - np.sign(loc.x) * xSize / 2, loc.y - np.sign(loc.y) * xSize / 2, loc.z), rotation = rot, type = "PASSIVE")
+        else:
+            generate_particle(size = 0.6, location = (loc.x - np.sign(loc.x) * xSize / 2, loc.y - np.sign(loc.y) * xSize / 2, loc.z), rotation = rot, type = "ACTIVE")
+        bpy.context.object.name = name
+        
+        #Copy wall particles to obtain periodicity
+        if x_wall_distance < 1:
+            generate_particle(size = 0.6, location = (loc.x + np.sign(loc.x) * xSize / 2, loc.y - np.sign(loc.y) * xSize / 2, loc.z), rotation = rot, type = "PASSIVE")
+            bpy.context.object.name = name + ".copyX"
+        
+        if  y_wall_distance < 1:
+            generate_particle(size = 0.6, location = (loc.x - np.sign(loc.x) * xSize / 2, loc.y + np.sign(loc.y) * xSize / 2, loc.z), rotation = rot, type = "PASSIVE")
+            bpy.context.object.name = name + ".copyY"
+
+        if x_wall_distance < 1 + margin and y_wall_distance < 1:
+            generate_particle(size = 0.6, location = (loc.x + np.sign(loc.x) * xSize / 2, loc.y + np.sign(loc.y) * xSize / 2, loc.z), rotation = rot, type = "PASSIVE")
+            bpy.context.object.name = name + ".copyXY"
+        obj.select_set(True)
+        bpy.ops.object.delete(use_global=False)  
+
 def steady_state(simulation_current_frame):
 
     bpy.ops.object.select_all(action='SELECT')
@@ -163,28 +172,38 @@ def steady_state(simulation_current_frame):
 
     for it in range(max_steady_state_iterations):
         i = 0
+        print(simulation_current_frame)
         bpy.context.scene.frame_set(frame = simulation_current_frame)
+        bpy.context.view_layer.update()
         
         for obj in bpy.context.selected_objects:
             x[i], y[i], z[i] = obj.matrix_world.translation
             d[i] = np.sqrt((x[i] - x_prev[i]) ** 2 + (y[i] - y_prev[i]) ** 2 + (z[i] - z_prev[i]) ** 2)
-            x_prev[i], y_prev[i], z_prev[i] = np.copy(x[i]), np.copy(y[i]), np.copy(z[i])
+            x_prev[i] = np.copy(x[i])
+            y_prev[i] = np.copy(y[i])
+            z_prev[i] = np.copy(z[i])
             i += 1
 
         simulation_current_frame += 1
 
+        print(z)
+        print(d)
         if max(d) < steady_state_margin:
             break
+
+
     return simulation_current_frame
+
+#periodic_shift2()
 
 #Clear canvas
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
 
+generate_box()
+
 bpy.context.scene.frame_end = 10000
 bpy.context.scene.rigidbody_world.point_cache.frame_end = 10000
-
-generate_box()
 
 simulation_current_frame = 0
 for n in range(particle_number):
@@ -193,14 +212,18 @@ for n in range(particle_number):
     rand_rot = random_rotation()
     rand_size = random_size(size_mean, size_std)
     generate_particle(rand_size, rand_loc, rand_rot, "ACTIVE")
-    bpy.context.object.rigid_body.kinematic = True
     bpy.context.object.name = "Cube.{:03d}".format(n)
     
     if ((n + 1) % shift_interval == 0):
+        for i in range (10):
+            bpy.context.scene.frame_set(frame = simulation_current_frame)
+            simulation_current_frame += 1
+            bpy.context.view_layer.update()
         simulation_current_frame = steady_state(simulation_current_frame)
-        print(simulation_current_frame)
+
         periodic_shift()
 
+bpy.context.scene.frame_set(frame = simulation_current_frame)
         
 
 
