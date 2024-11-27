@@ -1,0 +1,3 @@
+SpheresOld: Spheres_OrigFixed.stl en SphereD.stl zijn oude stl's voor de bollen.
+Rings: RINGS_A.stl, RINGS_S.stl, RR2F.stl en RR2XS.stl zijn gebruikte stl's voor de ringen als packedbed.
+Spheres: sphere_packing.stl, SphereSB.eMesh/.stl, SphereSE.eMesh/.stl zijn de huidige stl's voor de bollen.
