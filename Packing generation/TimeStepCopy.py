@@ -25,9 +25,9 @@ def CopySelection():
 def TimeStep():
     Max = SectionBounds(Size)[0]
     Min = SectionBounds(Size)[1]
-    bpy.ops.object.select_all(action='SELECT')
-    print("All objects selected.")
-    for obj in bpy.context.selected_objects:
+    bpy.ops.object.select_all(action='DESELECT')
+    #print("All objects selected.")
+    for obj in bpy.data.objects:
         loc = obj.location
         if loc[2] > 0:
             print("Object has a positive Z-coordinate.")
@@ -35,6 +35,8 @@ def TimeStep():
                 print("Object is within bounds on the X-axis.")
                 if loc[1] < Max and loc[1] > Min:
                     print("Object is within bounds on the Y-axis. \n Starting Copy.")
+                    obj.select_set(True)
+                    bpy.context.view_layer.objects.active = obj
                     CopySelection()
 print("Starting time step.")
 TimeStep()
