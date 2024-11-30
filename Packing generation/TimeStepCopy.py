@@ -9,7 +9,7 @@ def SectionBounds(size):
     return min, max
 
 def CopySelection():
-    for i in range(4):
+    for i in range(8):
         obj = bpy.context.active_object
         bpy.ops.object.duplicate()
         if i == 0:
@@ -19,6 +19,18 @@ def CopySelection():
         if i == 2:
             obj.location.y += Size
         if i == 3:
+            obj.location.y -= Size
+        if i == 4:
+            obj.location.x += Size
+            obj.location.y += Size
+        if i == 5:
+            obj.location.x += Size
+            obj.location.y -= Size
+        if i == 6:
+            obj.location.x -= Size
+            obj.location.y += Size
+        if i == 7:
+            obj.location.x -= Size
             obj.location.y -= Size
         
 def DeleteOldStep(location,max,min,object):
@@ -68,19 +80,19 @@ def TimeStep():
         loc = obj.location
         
         if loc.z < 0:
-            print("Object", obj.name, "has a negative Z-coordinate. Continueing...")
+            print("Object", obj.name, "has a negative Z-coordinate. Continuing...")
             continue
         
         print("Object", obj.name, " has a positive Z-coordinate.")
         
         if loc.x > max or loc.x < min:
-            print("Object", obj.name, "is out of bounds on the X-axis. Continueing...")
+            print("Object", obj.name, "is out of bounds on the X-axis. Continuing...")
             continue
         
         print("Object", obj.name, " is within bounds on the X-axis.")
         
         if loc.y > max and loc.y < min:
-            print("Object", obj.name, "is out of bounds on the Y-axis. Continueing...")
+            print("Object", obj.name, "is out of bounds on the Y-axis. Continuing...")
             continue
         
         print("Object", obj.name, " is within bounds on the Y-axis. \nStarting Copy.")
