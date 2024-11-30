@@ -1,6 +1,7 @@
 import bpy
 import numpy as np
 import random as rd
+import mathutils as mutils
 rng = np.random.default_rng()
 #import parameters as params
 
@@ -13,7 +14,7 @@ steady_state_margin = 0.0001
 max_steady_state_iterations = 100
 particle_number = 10
 shift_interval = 5
-size_mean = 0.6,
+size_mean = 0.3,
 size_std = 0
 
 #╔═══════════════════════╦═════════════╦════════════════════════╗#
@@ -60,20 +61,22 @@ def random_location(n):
     x = rng.uniform(-(xSize / 2 - 1), xSize / 2 - 1)
     y = rng.uniform(-(ySize / 2 - 1), ySize / 2 - 1)
     z = (n % shift_interval) * 2 + zSize + 1
-    return (x, y, z)
+    return mutils.Vector((x, y, z))
 
 def random_rotation():
     alpha = rng.random() * 2 * np.pi
     beta = np.arccos(2 * rng.random() - 1)
     gamma = rng.random() * 2 * np.pi
-    return (alpha, beta, gamma)
+    return mutils.Euler((alpha, beta, gamma))
 
-def random_size(mu, sigma):
+def random_scale(mu, sigma):
     size = rng.normal(mu, sigma)
-    return size
+    return mutils.Vector((size, size, size))
 
-def generate_particle(size, location, rotation = (0,0,0), type = "ACTIVE"):
-    bpy.ops.mesh.primitive_cube_add(size = size, location = location, rotation = rotation)
+def generate_particle(location, rotation = mutils.Euler((0,0,0)), scale = mutils.Vector((1,1,1)), type = "ACTIVE"):
+    bpy.ops.mesh.primitive_cube_add()
+    obj = bpy.context.selected_objects[0]
+    obj.matrix_world = mutils.Matrix.LocRotScale(location, rotation, scale)
     bpy.ops.rigidbody.object_add(type = type)
 
 #Shift the particles in a modular fashion
@@ -86,19 +89,16 @@ def periodic_shift():
     bpy.ops.object.select_pattern(pattern="Cube.*", extend=False)
     for obj in bpy.context.selected_objects:
         obj.rigid_body.type = 'PASSIVE'
-        loc = obj.location
-        rot = obj.rotation_euler
+        (location, rotation, scale) = obj.matrix_world.decompose()
         name = obj.name 
-        print(loc)
-        xOld, yOld, zOld = loc
+        xOld, yOld, zOld = location
 
         #New location for particles on the inside
-        loc.x -= np.sign(xOld) * xSize / 2
-        loc.y -= np.sign(yOld) * ySize / 2
-        print(loc)
+        location -= mutils.Vector((np.sign(xOld) * xSize / 2, np.sign(yOld) * ySize / 2, 0))
+        obj.matrix_world = mutils.Matrix.LocRotScale(location, rotation, scale)
 
-        x_wall_distance = np.abs(np.abs(loc.x) - xSize / 2) - margin
-        y_wall_distance = np.abs(np.abs(loc.y) - ySize / 2) - margin
+        x_wall_distance = np.abs(np.abs(location.x) - xSize / 2) - margin
+        y_wall_distance = np.abs(np.abs(location.y) - ySize / 2) - margin
 
         #Particles close to wall are passive
         if not (x_wall_distance < 1 or y_wall_distance < 1):
@@ -106,16 +106,16 @@ def periodic_shift():
 
         #Copy wall particles to obtain periodicity
         if x_wall_distance < 1:
-            generate_particle(size = 0.6, location = (loc.x + np.sign(xOld) * xSize, loc.y, loc.z), rotation = rot, type = "PASSIVE")
-            bpy.context.object.name = obj.name + ".copyX"
+            generate_particle(mutils.Vector((np.sign(xOld) * xSize, 0, 0)) + location, rotation.to_euler(), scale, "PASSIVE")
+            bpy.context.object.name = name + ".copyX"
         
         if  y_wall_distance < 1:
-            generate_particle(size = 0.6, location = (loc.x, loc.y + np.sign(yOld) * ySize, loc.z), rotation = rot, type = "PASSIVE")
-            bpy.context.object.name = obj.name + ".copyY"
+            generate_particle(mutils.Vector((0, np.sign(yOld) * ySize, 0)) + location, rotation.to_euler(), scale, "PASSIVE")
+            bpy.context.object.name = name + ".copyY"
 
         if x_wall_distance < 1 + margin and y_wall_distance < 1:
-            generate_particle(size = 0.6, location = (loc.x + np.sign(xOld) * xSize, loc.y + np.sign(yOld) * ySize, loc.z), rotation = rot, type = "PASSIVE")
-            bpy.context.object.name = obj.name + ".copyXY"
+            generate_particle(mutils.Vector((np.sign(xOld) * xSize, np.sign(yOld) * ySize, 0)) + location, rotation.to_euler(), scale, "PASSIVE")
+            bpy.context.object.name = name + ".copyXY"
 
 def periodic_shift2():
     #Delete previous copies
@@ -210,8 +210,8 @@ for n in range(particle_number):
 
     rand_loc = random_location(n)
     rand_rot = random_rotation()
-    rand_size = random_size(size_mean, size_std)
-    generate_particle(rand_size, rand_loc, rand_rot, "ACTIVE")
+    rand_scale = random_scale(size_mean, size_std)
+    generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE")
     bpy.context.object.name = "Cube.{:03d}".format(n)
     
     if ((n + 1) % shift_interval == 0):
@@ -223,7 +223,7 @@ for n in range(particle_number):
 
         periodic_shift()
 
-bpy.context.scene.frame_set(frame = simulation_current_frame)
+#bpy.context.scene.frame_set(frame = simulation_current_frame)
         
 
 
