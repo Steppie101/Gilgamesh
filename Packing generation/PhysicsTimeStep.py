@@ -4,6 +4,7 @@ import mathutils as mutils
 
 rng = np.random.default_rng()
 Size = 10
+maxIterations = 1000
 
 
 def SectionBounds(size):
@@ -27,30 +28,32 @@ def random_scale(mu, sigma):
     size = rng.normal(mu, sigma)
     return mutils.Vector((size, size, size))
 
+def generate_particle(location, rotation = mutils.Euler((0,0,0)), scale = mutils.Vector((1,1,1)), type = "ACTIVE"):
+    bpy.ops.mesh.primitive_cube_add()
+    obj = bpy.context.selected_objects[0]
+    obj.matrix_world = mutils.Matrix.LocRotScale(location, rotation, scale)
+    bpy.ops.rigidbody.object_add(type = type)
+
 def CopySelection():
+    obj = bpy.context.active_object
+    location, rotation, scale = obj.matrix_world.decompose()
     for i in range(8):
-        obj = bpy.context.active_object
-        bpy.ops.object.duplicate()
         if i == 0:
-            obj.location.x += Size
+            generate_particle(location + mutils.Vector((Size, 0, 0)), rotation, scale, "ACTIVE")
         if i == 1:
-            obj.location.x -= Size
+            generate_particle(location + mutils.Vector((-Size, 0, 0)), rotation, scale, "ACTIVE")
         if i == 2:
-            obj.location.y += Size
+            generate_particle(location + mutils.Vector((0, Size, 0)), rotation, scale, "ACTIVE")
         if i == 3:
-            obj.location.y -= Size
+            generate_particle(location + mutils.Vector((0, -Size, 0)), rotation, scale, "ACTIVE")
         if i == 4:
-            obj.location.x += Size
-            obj.location.y += Size
+            generate_particle(location + mutils.Vector((Size, Size, 0)), rotation, scale, "ACTIVE")
         if i == 5:
-            obj.location.x += Size
-            obj.location.y -= Size
+            generate_particle(location + mutils.Vector((Size, -Size, 0)), rotation, scale, "ACTIVE")
         if i == 6:
-            obj.location.x -= Size
-            obj.location.y += Size
+            generate_particle(location + mutils.Vector((-Size, Size, 0)), rotation, scale, "ACTIVE")
         if i == 7:
-            obj.location.x -= Size
-            obj.location.y -= Size
+            generate_particle(location + mutils.Vector((-Size, -Size, 0)), rotation, scale, "ACTIVE")
         
 def DeleteOldStep(location,max,min,object):
     if location.z < 0:
@@ -80,15 +83,6 @@ def TimeStep(current_frame):
     min, max = SectionBounds(Size)
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.visual_transform_apply()
-
-    #Deletes the old step
-    print("Starting deletion.")
-    bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
-    for obj in bpy.context.selected_objects:
-        bpy.ops.object.select_all(action='DESELECT')
-        loc = obj.matrix_world.translation
-        DeleteOldStep(loc,max,min,obj)
-    print("Finished deletion.")
     
     #Check if the object is in the middle section, and copies it.
     #This does not yet include a check for the floor, this will need an extra if statement.
@@ -124,8 +118,35 @@ def TimeStep(current_frame):
     
         #Perform time step
         bpy.context.scene.frame_set(frame = current_frame)
+        
+        #Deletes the old step
+        print("Starting deletion.")
+        bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
+        for obj in bpy.context.selected_objects:
+            bpy.ops.object.select_all(action='DESELECT')
+            loc = obj.matrix_world.translation
+            DeleteOldStep(loc,max,min,obj)
+        print("Finished deletion.")
+
+'''
+def main():
+    min, max = SectionBounds(Size)
+    for i in range(maxIterations):
+        TimeStep(2 * i)
+        if (i % 50):
+                rand_loc = random_location(min, max)
+                rand_rot = random_rotation()
+                rand_scale = random_scale(1, 0)
+                generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE")
+        
+        
+    
+
+if __name__ == "__main__":
+    main()
+'''
 
 print("Starting time step.")
-for i in range(4):
+for i in range(20):
     TimeStep(i)
 print("Time step done.")
