@@ -4,7 +4,7 @@ import mathutils as mutils
 
 rng = np.random.default_rng()
 Size = 10
-maxIterations = 50
+maxIterations = 100
 
 def SectionBounds(size):
     max = size / 2
@@ -77,7 +77,7 @@ def TimeStep(current_frame):
     min, max = SectionBounds(Size)
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.visual_transform_apply()
-            
+        
     #Deletes the old step
     bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
     for obj in bpy.context.selected_objects:
@@ -116,21 +116,26 @@ def TimeStep(current_frame):
 
 
 def main():
-    '''
+    bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
+    bpy.ops.object.delete(use_global=False)
+    
     min, max = SectionBounds(Size)
     for i in range(maxIterations):
-        TimeStep(i)
-        if (i % 50 == 0):
+        if (i % 20 == 0):
                 rand_loc = random_location(min, max)
                 rand_rot = random_rotation()
                 rand_scale = random_scale(1, 0)
                 generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE")
-        print(i)
-    '''
-    
-    for i in range(4):
+        print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m", end = "\r")
         TimeStep(i)
+    
+    bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
+    for obj in bpy.context.selected_objects:
+        bpy.ops.object.select_all(action='DESELECT')
+        loc = obj.matrix_world.translation
+        DeleteOldStep(loc,max,min,obj)
         
+    print("\x1b[1;32;40m" + "|" + 101 * "=" + "|" + "\x1b[0m")
 
 if __name__ == "__main__":
     main()
