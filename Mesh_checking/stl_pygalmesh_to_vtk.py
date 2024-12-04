@@ -1,12 +1,17 @@
 import pygalmesh
 import os
 
-path = os.path.dirname(os.path.relpath(__file__))
-if "C:/" in path:
-    path = (path.split("C:/"))[-1]
-    path = "/mnt/c/" + path
 
-os.chdir(path)
+def changeWorkingDir():
+    path = os.path.dirname(os.path.relpath(__file__))
+    if "C:/" in path:
+        path = (path.split("C:/"))[-1]
+        path = "/mnt/c/" + path
+
+    os.chdir(path)
+
+
+changeWorkingDir()
 
 mesh = pygalmesh.generate_volume_mesh_from_surface_mesh(
     "sphere_packing.stl",
