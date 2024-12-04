@@ -1,9 +1,5 @@
 import os
 
-import subprocess
-
-sp = subprocess.Popen(["/bin/bash", "-i", "-c", "nuke -x scriptpath"])
-sp.communicate()
 
 path = os.path.dirname(os.path.relpath(__file__))
 if "C:/" in path:
@@ -13,10 +9,14 @@ if "C:/" in path:
 os.chdir(path)
 
 
-# os.system("source /usr/lib/openfoam/openfoam2406/etc/bashrc")
+commandSet = [
+    "vtkUnstructuredToFoam mesh_stl.vtk",
+    "checkMesh -allRegions -allGeometry -allTopology -writeSets vtk > log.checkMesh.txt",
+    "touch results.foam",
+]
 
-os.system("vtk3DToFoam mesh_stl.vtk")
-os.system("checkMesh -allRegions -allGeometry -allTopology | tee output.txt")
-os.system("touch results.foam")
-os.system("foamToVTK")
-os.system("foamToVTK -faceSet nonOrthoFaces")
+for command in commandSet:
+    if ">" not in command:
+        command += " > /dev/null"
+
+    os.system(command)
