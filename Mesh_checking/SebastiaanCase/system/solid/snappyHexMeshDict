@@ -44,14 +44,14 @@ castellatedMeshControls
     // If local number of cells is >= maxLocalCells on any processor
     // switches from from refinement followed by balancing
     // (current method) to (weighted) balancing before refinement.
-    maxLocalCells 4000000;
+    maxLocalCells 2000000;
 
     // Overall cell limit (approximately). Refinement will stop immediately
     // upon reaching this number so a refinement level might not complete.
     // Note that this is the number of cells before removing the part which
     // is not 'visible' from the keepPoint. The final number of cells might
     // actually be a lot less.
-    maxGlobalCells 10000000;
+    maxGlobalCells 5000000;
 
     // The surface refinement loop might spend lots of iterations refining just a
     // few cells. This setting will cause refinement to stop if <= minimumRefine
@@ -62,7 +62,7 @@ castellatedMeshControls
     // Number of buffer layers between different levels.
     // 1 means normal 2:1 refinement restriction, larger means slower
     // refinement.
-    nCellsBetweenLevels 1;
+    nCellsBetweenLevels 2;
 
     // Explicit feature edge refinement
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,7 +91,7 @@ castellatedMeshControls
     	"solid.*"
     	{
     	     // Surface-wise min and max refinement level
-    	     level (3 3);
+    	     level (2 2);
     	}
     }
 
@@ -129,6 +129,7 @@ castellatedMeshControls
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
     locationInMesh (0 0 0);
+    allowFreeStandingZoneFaces true;
 }
 
 // Settings for the snapping.
@@ -148,7 +149,7 @@ snapControls
 
     //- Maximum number of snapping relaxation iterations. Should stop
     //  before upon reaching a correct mesh.
-    nRelaxIter 8;
+    nRelaxIter 10;
     
     implicitFeatureSnap true;
 
@@ -231,11 +232,11 @@ addLayersControls
 meshQualityControls
 {
     //- Maximum non-orthogonality allowed. Set to 180 to disable.
-    maxNonOrtho 40;
+    maxNonOrtho 70;
 
     //- Max skewness allowed. Set to <0 to disable.
-    maxBoundarySkewness 5;
-    maxInternalSkewness 1;
+    maxBoundarySkewness 10;
+    maxInternalSkewness 10;
 
     //- Max concaveness allowed. Is angle (in degrees) below which concavity
     //  is allowed. 0 is straight face, <0 would be convex face.
@@ -248,7 +249,7 @@ meshQualityControls
     //- Minimum pyramid volume. Is absolute volume of cell pyramid.
     //  Set to a sensible fraction of the smallest cell volume expected.
     //  Set to very negative number (e.g. -1E30) to disable.
-    minVol 1e-17;
+    minVol 1e-18;
 
     //- Minimum face area. Set to <0 to disable.
     minArea -1;
@@ -276,6 +277,7 @@ meshQualityControls
     nSmoothScale 5;
     //- amount to scale back displacement at error points
     errorReduction 0.75;
+    minTetQuality -1e30;
 }
 
 // Advanced
@@ -285,7 +287,7 @@ meshQualityControls
 // 1 : write intermediate meshes
 // 2 : write volScalarField with cellLevel for postprocessing
 // 4 : write current intersections as .obj files
-debug 0;
+debug 2;
 
 // Merge tolerance. Is fraction of overall bounding box of initial mesh.
 // Note: the write tolerance needs to be higher than this.

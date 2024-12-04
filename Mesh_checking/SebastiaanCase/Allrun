@@ -49,8 +49,8 @@ do
 
 	       ./makeMesh
 
-            runApplication makeFaMesh -region fluid 2>/dev/null
-            runApplication -l log.makeFaMesh.solid makeFaMesh -region solid 2>/dev/null
+            runApplication -s fluid.txt makeFaMesh -region fluid
+            runApplication -s solid.txt makeFaMesh -region solid 2>/dev/null
 
             ;;
 
@@ -68,14 +68,14 @@ do
 
 	       ./makeMesh
 
-            runApplication -l log.setSet.solid setSet -region solid -batch solid.setSet 2>/dev/null
-            runApplication -l log.setsToZones.solid setsToZones -region solid -noFlipMap 2>/dev/null
+            runApplication -s solid setSet -region solid -batch solid.setSet 2>/dev/null
+            runApplication -s solid setsToZones -region solid -noFlipMap 2>/dev/null
 
             runApplication setSet -region fluid -batch fluid.setSet 2>/dev/null
             runApplication setsToZones -region fluid -noFlipMap 2>/dev/null
 
             runApplication makeFaMesh -region fluid 2>/dev/null
-            runApplication -l log.makeFaMesh.solid makeFaMesh -region solid 2>/dev/null
+            runApplication -s solid makeFaMesh -region solid 2>/dev/null
 
             ;;
 
@@ -89,8 +89,8 @@ do
         -P|--parallel)
             no_args=0
 
-            runApplication -l log.decomposePar.fluid decomposePar -region fluid
-            runApplication -l log.decomposePar.solid  decomposePar -region solid
+            runApplication -s fluid decomposePar -region fluid
+            runApplication -s solid  decomposePar -region solid
 
             mpirun -np 8 multiRegionFoam -parallel 2>&1 > log.multiRegionFoam
             ;;

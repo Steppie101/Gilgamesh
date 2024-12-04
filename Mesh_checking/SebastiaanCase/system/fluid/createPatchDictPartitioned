@@ -25,15 +25,15 @@ matchTolerance 1E-3;
 pointSync true;
 
 // Patches to create.
-patchInfo
+patches
 (
     {
         name fluid_to_solid;
-        dictionary
+        patchInfo
         {
             type patch;
         }
         constructFrom patches;
-        patches ( solid_patch0  );
+        patches ( sides  );
     }
 );

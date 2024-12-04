@@ -5,16 +5,15 @@
 
 cp -r constant/polyMesh_orig constant/polyMesh
 cp system/fluid/snappyHexMeshDict system/snappyHexMeshDict
-runApplication -s log.blockMesh.fluid.txt blockMesh
-runApplication -s log.snappyHexMesh.fluid.txt snappyHexMesh -overwrite
-rm -r constant/fluid/
+runApplication -s fluid.txt blockMesh
+runApplication -s fluid.txt snappyHexMesh -overwrite
 mv -f constant/polyMesh constant/fluid/
-runApplication -s log.createpatch.fluid.txt createPatch -region fluid -overwrite
+runApplication -s fluid.txt createPatch -region fluid -overwrite
 
 cp -r constant/polyMesh_orig constant/polyMesh
 cp system/solid/snappyHexMeshDict system/snappyHexMeshDict
-runApplication -s log.blockMesh.solid blockMesh
-runApplication -s log.snappyHexMesh.solid snappyHexMesh -overwrite
+runApplication -s solid.txt blockMesh
+runApplication -s solid.txt snappyHexMesh -overwrite
 mv -f constant/polyMesh constant/solid
-runApplication -s log.createpatch.solid createPatch -region solid -overwrite
+runApplication -s solid.txt createPatch -region solid -overwrite
 
