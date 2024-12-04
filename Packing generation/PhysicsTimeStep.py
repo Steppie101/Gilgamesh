@@ -2,9 +2,13 @@ import bpy
 import numpy as np
 import mathutils as mutils
 
-rng = np.random.default_rng()
-Size = 10
+rng = np.random.default_rng(0)
+Size = 6
 maxIterations = 100
+deletion_margin = 0.7
+
+bpy.context.scene.frame_end = 10000
+bpy.context.scene.rigidbody_world.point_cache.frame_end = 10000
 
 def SectionBounds(size):
     max = size / 2
@@ -14,7 +18,7 @@ def SectionBounds(size):
 def random_location(min, max):
     x = rng.uniform(min, max)
     y = rng.uniform(min, max)
-    z = 10
+    z = 20
     return mutils.Vector((x, y, z))
 
 def random_rotation():
@@ -27,32 +31,34 @@ def random_scale(mu, sigma):
     size = rng.normal(mu, sigma)
     return mutils.Vector((size, size, size))
 
-def generate_particle(location, rotation = mutils.Euler((0,0,0)), scale = mutils.Vector((1,1,1)), type = "ACTIVE"):
+def generate_particle(location, rotation = mutils.Euler((0,0,0)), scale = mutils.Vector((1,1,1)), type = "ACTIVE", name = "None"):
     bpy.ops.mesh.primitive_cube_add()
     obj = bpy.context.selected_objects[0]
     obj.matrix_world = mutils.Matrix.LocRotScale(location, rotation, scale)
+    obj.name = name
     bpy.ops.rigidbody.object_add(type = type)
 
-def CopySelection():
+def CopySelection(min, max):
     obj = bpy.context.active_object
     location, rotation, scale = obj.matrix_world.decompose()
+    name = obj.name
     for i in range(8):
-        if i == 0:
-            generate_particle(location + mutils.Vector((Size, 0, 0)), rotation, scale, "ACTIVE")
-        if i == 1:
-            generate_particle(location + mutils.Vector((-Size, 0, 0)), rotation, scale, "ACTIVE")
-        if i == 2:
-            generate_particle(location + mutils.Vector((0, Size, 0)), rotation, scale, "ACTIVE")
-        if i == 3:
-            generate_particle(location + mutils.Vector((0, -Size, 0)), rotation, scale, "ACTIVE")
-        if i == 4:
-            generate_particle(location + mutils.Vector((Size, Size, 0)), rotation, scale, "ACTIVE")
-        if i == 5:
-            generate_particle(location + mutils.Vector((Size, -Size, 0)), rotation, scale, "ACTIVE")
-        if i == 6:
-            generate_particle(location + mutils.Vector((-Size, Size, 0)), rotation, scale, "ACTIVE")
-        if i == 7:
-            generate_particle(location + mutils.Vector((-Size, -Size, 0)), rotation, scale, "ACTIVE")
+        if i == 0 and min < location.x < 0:
+            generate_particle(location + mutils.Vector((Size, 0, 0)), rotation, scale, "ACTIVE", name + ".x")
+        if i == 1 and max > location.x > 0:
+            generate_particle(location + mutils.Vector((-Size, 0, 0)), rotation, scale, "ACTIVE", name + ".x")
+        if i == 2 and min < location.y < 0:
+            generate_particle(location + mutils.Vector((0, Size, 0)), rotation, scale, "ACTIVE", name + ".y")
+        if i == 3 and max > location.y > 0:
+            generate_particle(location + mutils.Vector((0, -Size, 0)), rotation, scale, "ACTIVE", name + ".y")
+        if i == 4 and min < location.x < 0 and min < location.y < 0:
+            generate_particle(location + mutils.Vector((Size, Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
+        if i == 5 and min < location.x < 0 and max > location.y > 0:
+            generate_particle(location + mutils.Vector((Size, -Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
+        if i == 6 and max > location.x > 0 and min < location.y < 0:
+            generate_particle(location + mutils.Vector((-Size, Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
+        if i == 7 and max > location.x > 0 and max > location.y > 0:
+            generate_particle(location + mutils.Vector((-Size, -Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
         
 def DeleteOldStep(location,max,min,object):
     if location.z < 0:
@@ -77,42 +83,25 @@ def TimeStep(current_frame):
     min, max = SectionBounds(Size)
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.visual_transform_apply()
-        
+
     #Deletes the old step
     bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
     for obj in bpy.context.selected_objects:
         bpy.ops.object.select_all(action='DESELECT')
         loc = obj.matrix_world.translation
-        DeleteOldStep(loc,max,min,obj)
-    
+        DeleteOldStep(loc,max,min,obj)    
+        
     #Check if the object is in the middle section, and copies it.
     #This does not yet include a check for the floor, this will need an extra if statement.
     bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
     for obj in bpy.context.selected_objects:
         bpy.ops.object.select_all(action='DESELECT')
-        loc = obj.location
-        
-        if loc.z < 0:
-            print("Object", obj.name, "has a negative Z-coordinate. Continuing...")
-            continue
-        
-        if loc.x > max or loc.x < min:
-            print("Object", obj.name, "is out of bounds on the X-axis. Continuing...")
-            continue
-        
-        if loc.y > max or loc.y < min:
-            print("Object", obj.name, "is out of bounds on the Y-axis. Continuing...")
-            continue
-        
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
-        location, rotation, scale = obj.matrix_world.decompose()
-        obj.location = location
-        CopySelection()
-    
+        CopySelection(min, max)
+
     #Perform time step
     bpy.context.scene.frame_set(frame = current_frame)
-
 
 
 def main():
@@ -120,20 +109,24 @@ def main():
     bpy.ops.object.delete(use_global=False)
     
     min, max = SectionBounds(Size)
+    n = 0
     for i in range(maxIterations):
         if (i % 20 == 0):
-                rand_loc = random_location(min, max)
-                rand_rot = random_rotation()
-                rand_scale = random_scale(1, 0)
-                generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE")
-        print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m", end = "\r")
+            rand_loc = random_location(min, max)
+            rand_rot = random_rotation()
+            rand_scale = random_scale(1, 0)
+            generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Cube.{:03d}".format(n))
+            n += 1
+        print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m" + str(i) + "/" + str(maxIterations), end = "\r")
         TimeStep(i)
     
+    '''
     bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
     for obj in bpy.context.selected_objects:
         bpy.ops.object.select_all(action='DESELECT')
         loc = obj.matrix_world.translation
         DeleteOldStep(loc,max,min,obj)
+    '''
         
     print("\x1b[1;32;40m" + "|" + 101 * "=" + "|" + "\x1b[0m")
 
