@@ -2,9 +2,9 @@ import bpy
 import numpy as np
 import mathutils as mutils
 
-rng = np.random.default_rng(0)
-Size = 6
-maxIterations = 100
+rng = np.random.default_rng(4)
+Size = 4
+maxIterations = 200
 deletion_margin = 0.7
 
 bpy.context.scene.frame_end = 10000
@@ -37,28 +37,19 @@ def generate_particle(location, rotation = mutils.Euler((0,0,0)), scale = mutils
     obj.matrix_world = mutils.Matrix.LocRotScale(location, rotation, scale)
     obj.name = name
     bpy.ops.rigidbody.object_add(type = type)
+    obj.rigid_body.collision_shape = 'BOX'
 
 def CopySelection(min, max):
     obj = bpy.context.active_object
     location, rotation, scale = obj.matrix_world.decompose()
+    x, y, z = location
     name = obj.name
-    for i in range(8):
-        if i == 0 and min < location.x < 0:
-            generate_particle(location + mutils.Vector((Size, 0, 0)), rotation, scale, "ACTIVE", name + ".x")
-        if i == 1 and max > location.x > 0:
-            generate_particle(location + mutils.Vector((-Size, 0, 0)), rotation, scale, "ACTIVE", name + ".x")
-        if i == 2 and min < location.y < 0:
-            generate_particle(location + mutils.Vector((0, Size, 0)), rotation, scale, "ACTIVE", name + ".y")
-        if i == 3 and max > location.y > 0:
-            generate_particle(location + mutils.Vector((0, -Size, 0)), rotation, scale, "ACTIVE", name + ".y")
-        if i == 4 and min < location.x < 0 and min < location.y < 0:
-            generate_particle(location + mutils.Vector((Size, Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
-        if i == 5 and min < location.x < 0 and max > location.y > 0:
-            generate_particle(location + mutils.Vector((Size, -Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
-        if i == 6 and max > location.x > 0 and min < location.y < 0:
-            generate_particle(location + mutils.Vector((-Size, Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
-        if i == 7 and max > location.x > 0 and max > location.y > 0:
-            generate_particle(location + mutils.Vector((-Size, -Size, 0)), rotation, scale, "ACTIVE", name + ".xy")
+    
+    generate_particle(location - mutils.Vector((np.sign(x) * Size, 0, 0)), rotation, scale, "ACTIVE", name[:-3] + ".x_")
+        
+    generate_particle(location - mutils.Vector((0, np.sign(y) * Size, 0)), rotation, scale, "ACTIVE", name[:-3] + "._y")
+        
+    generate_particle(location - mutils.Vector((np.sign(x) * Size, np.sign(y) * Size, 0)), rotation, scale, "ACTIVE", name[:-3] + ".xy")
         
 def DeleteOldStep(location,max,min,object):
     if location.z < 0:
@@ -72,25 +63,95 @@ def DeleteOldStep(location,max,min,object):
         bpy.context.view_layer.objects.active = object
         bpy.ops.object.delete()
         return
-    
+        
     if location.y > max or location.y < min:
         object.select_set(True)
         bpy.context.view_layer.objects.active = object
         bpy.ops.object.delete()
         return
 
-def TimeStep(current_frame):
+def Rename(obj, min, max):
+    location = obj.matrix_world.translation
+    if obj.name == "*._?" and not min < location.x < max:
+        obj.name[-2] = "x"
+        bpy.data.objects[obj.name[:-2] + ""].select_set(True)
+    if obj.name == "*.?_" and not min < location.y < max:
+        obj.name[-1] = "y"
+    if obj.name == "*.x?" and min < location.x < max:
+        obj.name[-2] = "_"
+    if obj.name == "*.?y" and min < location.y < max:
+        obj.name[-1] = "_"
+
+def DeleteOldStep2(obj, min, max):
+    bpy.ops.object.select_all(action='DESELECT')
+    location, rotation, scale = obj.matrix_world.decompose()
+    x, y, z = location
+    name = obj.name
+    
+
+    if z < 0:
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.delete()
+        return   
+    
+    if not min < x < max:
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.delete()  
+        if name[-2:] == "__":
+            print("Particle outside x")
+            generate_particle(location - mutils.Vector((np.sign(x) * Size, 0, 0)), rotation, scale, "ACTIVE", name)
+            obj = bpy.data.objects[name]
+            location, rotation, scale = obj.matrix_world.decompose()
+            x, y, z = location
+            bpy.ops.object.select_all(action='DESELECT')
+        else:
+            return 
+
+    if not min < y < max:
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.delete()
+        if name[-2:] == "__":
+            print("Particle outside y")
+            generate_particle(location - mutils.Vector((0, np.sign(y) * Size, 0)), rotation, scale, "ACTIVE", name)
+            obj = bpy.data.objects[name]
+            location, rotation, scale = obj.matrix_world.decompose()
+            x, y, z = location
+            bpy.ops.object.select_all(action='DESELECT')
+        else:
+            return
+    '''
+    if min < x < max and min < y < max:
+        if name[-2:] != "__":
+            print("Particle inside x")
+            obj = bpy.data.objects[name[:-2] + "__"]
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.delete()
+            generate_particle(location - mutils.Vector((0, np.sign(y) * Size, 0)), rotation, scale, "ACTIVE", name)
+            name = name[:-2] + "__"
+            obj = bpy.data.objects[name]
+    '''
+
+ 
+    
+
+def TimeStep():
     min, max = SectionBounds(Size)
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.visual_transform_apply()
+    
 
     #Deletes the old step
     bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
     for obj in bpy.context.selected_objects:
         bpy.ops.object.select_all(action='DESELECT')
         loc = obj.matrix_world.translation
-        DeleteOldStep(loc,max,min,obj)    
-        
+        DeleteOldStep2(obj,min,max)
+
+
     #Check if the object is in the middle section, and copies it.
     #This does not yet include a check for the floor, this will need an extra if statement.
     bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
@@ -100,8 +161,15 @@ def TimeStep(current_frame):
         bpy.context.view_layer.objects.active = obj
         CopySelection(min, max)
 
-    #Perform time step
-    bpy.context.scene.frame_set(frame = current_frame)
+    '''
+    bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
+    for obj in bpy.context.selected_objects:
+        ReplaceBoundary(obj, min, max)
+    '''
+    
+    bpy.ops.outliner.orphans_purge()
+
+
 
 
 def main():
@@ -115,11 +183,21 @@ def main():
             rand_loc = random_location(min, max)
             rand_rot = random_rotation()
             rand_scale = random_scale(1, 0)
-            generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Cube.{:03d}".format(n))
+            generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Cube.{:03d}".format(n) + ".__")
             n += 1
-        print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m" + str(i) + "/" + str(maxIterations), end = "\r")
-        TimeStep(i)
+        #print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m" + str(i) + "/" + str(maxIterations))
+        print(str(i) + "/" + str(maxIterations))
+        TimeStep()
+        bpy.context.scene.frame_set(frame = i)
+
+    for i in range(maxIterations, maxIterations + 100):
+        print(str(i) + "/" + str(maxIterations))
+        TimeStep()
+        bpy.context.scene.frame_set(frame = i)
     
+    print("\x1b[1;32;40m" + "|" + 101 * "=" + "|" + "\x1b[0m")
+    
+        
     '''
     bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
     for obj in bpy.context.selected_objects:
@@ -127,8 +205,6 @@ def main():
         loc = obj.matrix_world.translation
         DeleteOldStep(loc,max,min,obj)
     '''
-        
-    print("\x1b[1;32;40m" + "|" + 101 * "=" + "|" + "\x1b[0m")
 
 if __name__ == "__main__":
     main()
