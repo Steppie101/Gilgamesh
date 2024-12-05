@@ -5,7 +5,6 @@ import mathutils as mutils
 rng = np.random.default_rng(4)
 Size = 4
 maxIterations = 200
-deletion_margin = 0.7
 
 bpy.context.scene.frame_end = 10000
 bpy.context.scene.rigidbody_world.point_cache.frame_end = 10000
@@ -18,7 +17,7 @@ def SectionBounds(size):
 def random_location(min, max):
     x = rng.uniform(min, max)
     y = rng.uniform(min, max)
-    z = 20
+    z = 25
     return mutils.Vector((x, y, z))
 
 def random_rotation():
@@ -38,6 +37,7 @@ def generate_particle(location, rotation = mutils.Euler((0,0,0)), scale = mutils
     obj.name = name
     bpy.ops.rigidbody.object_add(type = type)
     obj.rigid_body.collision_shape = 'BOX'
+    #obj.rigid_body.collision_margin = -0.01
 
 def CopySelection(min, max):
     obj = bpy.context.active_object
@@ -122,20 +122,32 @@ def DeleteOldStep2(obj, min, max):
             bpy.ops.object.select_all(action='DESELECT')
         else:
             return
-    '''
-    if min < x < max and min < y < max:
-        if name[-2:] != "__":
+        
+    if min < x < max or min < y < max:
+        if name[-2:] == "x_":
             print("Particle inside x")
             obj = bpy.data.objects[name[:-2] + "__"]
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.delete()
-            generate_particle(location - mutils.Vector((0, np.sign(y) * Size, 0)), rotation, scale, "ACTIVE", name)
-            name = name[:-2] + "__"
-            obj = bpy.data.objects[name]
-    '''
-
- 
+            obj = bpy.data.objects[name[:-2] + "x_"]
+            obj.name = name[:-2] + "__"
+        if name[-2:] == "_y":
+            print("Particle inside x")
+            obj = bpy.data.objects[name[:-2] + "__"]
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.delete()
+            obj = bpy.data.objects[name[:-2] + "_y"]
+            obj.name = name[:-2] + "__"
+        if name[-2:] == "xy":
+            print("Particle inside x")
+            obj = bpy.data.objects[name[:-2] + "__"]
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.delete()
+            obj = bpy.data.objects[name[:-2] + "xy"]
+            obj.name = name[:-2] + "__"
     
 
 def TimeStep():
@@ -160,12 +172,6 @@ def TimeStep():
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
         CopySelection(min, max)
-
-    '''
-    bpy.ops.object.select_pattern(pattern = 'Cube*', extend = False)
-    for obj in bpy.context.selected_objects:
-        ReplaceBoundary(obj, min, max)
-    '''
     
     bpy.ops.outliner.orphans_purge()
 
@@ -194,6 +200,8 @@ def main():
         print(str(i) + "/" + str(maxIterations))
         TimeStep()
         bpy.context.scene.frame_set(frame = i)
+    
+    TimeStep()
     
     print("\x1b[1;32;40m" + "|" + 101 * "=" + "|" + "\x1b[0m")
     
