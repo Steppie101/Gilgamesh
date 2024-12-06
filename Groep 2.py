@@ -129,7 +129,7 @@ def substracting_improved():
     #deze functie filtert de punten die te ver van de ballen liggen eruit en creeërt zo dus een nieuwe lijst 
     #met punten bestaande uit het volume tussen de bollen.
     #het kan dat deze functie heel lang moet runnen :(
-    #nog niet getest, wel uitgerekend dat hij een ongeveer anderhalf uur zal moeten runnen.
+    #nog niet getest, wel uitgerekend dat hij een ongeveer 16 minuten tot een uur zal moeten runnen.
     block = meshio.read("volumeblockmesh")
     balls = meshio.read("volumeballmesh")
     block_nodes = block.points()
