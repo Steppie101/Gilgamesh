@@ -123,5 +123,42 @@ def samen(cubemesh):
 #combinedmesh = samen(cubemesh)
 #print(combinedmesh)
 #combinedmesh.write("combined312.stl")
+
+"""Het van elkaar afhalen van volumes"""
+def substracting_improved():
+    #deze functie filtert de punten die te ver van de ballen liggen eruit en creeërt zo dus een nieuwe lijst 
+    #met punten bestaande uit het volume tussen de bollen.
+    #het kan dat deze functie heel lang moet runnen :(
+    #nog niet getest, wel uitgerekend dat hij een ongeveer anderhalf uur zal moeten runnen.
+    block = meshio.read("volumeblockmesh")
+    balls = meshio.read("volumeballmesh")
+    block_nodes = block.points()
+    balls_nodes = balls.points()
+    space = [] 
+    criterium = 0.0001
+    for j in range (len(balls_nodes)):
+        for i in range (len(block_nodes)):
+            #here I use continue statements to not let the code do all calculations when they are not necessary
+            #continue betekent dat hij doorskipt naar de volgende iteratie.
+            dx = block_nodes[0][j]-balls_nodes[0][i]
+            if abs(dx) > criterium:
+                continue
+            dy = block_nodes[1][i]-balls_nodes[1][i]
+            if abs(dy) > criterium:
+                continue
+            dz = block_nodes[2][i]-balls_nodes[2][i]
+            if abs(dz) > criterium:
+                continue
+            dist = np.sqrt(dx**2+dy**2+dz**2)
+            if dist > criterium:
+                space.append(block_nodes[j])
+    return space
+
+"""Converteren naar ascii"""
+def converteren():
+    binary = meshio.read("")
+    binary.write("", binary = False)
+    return
+
 t1 = time.time()
 print("Elapsed time =",t1-t0)
