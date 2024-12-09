@@ -1,16 +1,4 @@
 import gmsh
-import sys
-import os
-import subprocess
-
-# os.chdir("/mnt/c/Users/jtden/Documents/GitHub/Gilgamesh/Mesh_checking")
-
-path = os.path.dirname(os.path.relpath(__file__))
-if "C:/" in path:
-    path = (path.split("C:/"))[-1]
-    path = "/mnt/c/" + path
-
-os.chdir(path)
 
 # Initialize Gmsh
 gmsh.initialize()
