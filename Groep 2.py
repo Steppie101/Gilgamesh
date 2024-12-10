@@ -162,3 +162,17 @@ def converteren():
 
 t1 = time.time()
 print("Elapsed time =",t1-t0)
+
+
+
+import meshio 
+
+while True:
+    try:
+        mesh_file = str(input("What is the file name?: "))
+        #mesh_trimesh = trimesh.load(mesh_file)
+        mesh_pygalmesh = meshio.read(mesh_file)
+        break
+    except FileNotFoundError:
+        print("Wrong filename, filename either does not exist or did not end with .stl")
+    
