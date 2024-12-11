@@ -1,3 +1,5 @@
+"""Convert generated vtk to OpenFOAM, running checkMesh. Writing sets to vtk."""
+
 import os
 
 

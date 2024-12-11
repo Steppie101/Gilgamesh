@@ -1,6 +1,8 @@
+"""Clear the generated directories and files."""
+
 import os
 
-fileList = ["mesh_stl.vtk", "results.foam", "log.checkMesh.txt"]
+fileList = ["mesh_stl.vtk", "results.foam", "log.checkMesh.txt", "*.stl"]
 dirList = ["constant", "VTK", "postProcessing"]
 
 for fileName in fileList:

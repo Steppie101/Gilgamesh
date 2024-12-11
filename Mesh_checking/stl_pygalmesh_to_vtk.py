@@ -1,5 +1,8 @@
 import pygalmesh
+import os
 
+filename = "SphereSE.stl"
+os.system("cp ../Stls_via_Sebastiaan_Tim/Spheres/" + filename + " .")
 
 mesh = pygalmesh.generate_volume_mesh_from_surface_mesh(
     "sphere_packing.stl",
