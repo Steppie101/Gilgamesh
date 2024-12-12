@@ -1,20 +1,17 @@
 import bpy
 import numpy as np
 from mathutils import Euler, Vector, Matrix
+import sys
+from parameters import *
 
-particleSize = 1
-framesPerSecond = 25
-g = 9.81
-spawnInterval = 20
-
-spawnInterval = int(max(np.sqrt(2 * particleSize / g) * framesPerSecond + 1, spawnInterval))
+filepath = bpy.path.abspath("//")
+sys.path.append(filepath)
 
 rng = np.random.default_rng()
-xSize = 5
-ySize = 5
-numberParticles = 10
-extraIterations = 100
-spawnHeight = 25
+
+#╔═══════════════════════╦═════════════╦════════════════════════╗#
+#╠┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╌╣  Functions  ╠╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╣#
+#╚═══════════════════════╩═════════════╩════════════════════════╝#
 
 def RandomLocation(xSize, ySize):
     """Return a uniformly distributed location vector.
@@ -34,7 +31,7 @@ def RandomRotation():
     gamma = rng.random() * 2 * np.pi
     return Euler((alpha, beta, gamma))
 
-def RandomScale(mean, std):
+def RandomScale(mean = 1, std = 0):
     """Return a normally distributed scale vector.
     
     mean and std represent the mean and standard deviation of the normal distribution respectively.
@@ -47,9 +44,16 @@ def GenerateParticle(location, rotation = Euler((0,0,0)), scale = Vector((1,1,1)
     obj = bpy.context.selected_objects[0]
     obj.matrix_world = Matrix.LocRotScale(location, rotation, scale)
     obj.name = name
+
     bpy.ops.rigidbody.object_add(type = type)
-    obj.rigid_body.collision_shape = 'CONVEX_HULL'
-    #obj.rigid_body.collision_margin = -0.01
+    body = bpy.context.object.rigid_body
+    body.collision_shape = collisionShape
+    body.friction = friction
+    body.restitution = bouncyness
+    body.mesh_source = 'BASE'
+    body.collision_margin = collisionMargin
+    body.linear_damping = linearDamping
+    body.angular_damping = angularDamping
 
 def CopySelection():    
     bpy.ops.object.select_pattern(pattern = 'Particle*', extend = False)
@@ -138,7 +142,7 @@ def main():
         if (i % spawnInterval == 0):
             rand_loc = RandomLocation(xSize, ySize)
             rand_rot = RandomRotation()
-            rand_scale = RandomScale(particleSize, 0)
+            rand_scale = RandomScale(1, std = scaleDeviation)
             GenerateParticle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".__")
             n += 1
         
