@@ -1,33 +1,51 @@
 import bpy
 import numpy as np
-import mathutils as mutils
+from mathutils import Euler, Vector, Matrix
+
+particleSize = 1
+framesPerSecond = 25
+g = 9.81
+spawnInterval = 20
+
+spawnInterval = int(max(np.sqrt(2 * particleSize / g) * framesPerSecond + 1, spawnInterval))
 
 rng = np.random.default_rng()
 xSize = 5
 ySize = 5
-maxIterations = 100
+numberParticles = 10
 extraIterations = 100
+spawnHeight = 25
 
 def RandomLocation(xSize, ySize):
+    """Return a uniformly distributed location vector.
+    
+    The x and y coordinates are taken in their respective ranges xSize and ySize, centered at (0,0).
+    The z coordinate is the spawnHeight parameter.
+    """
     x = rng.uniform(-xSize / 2, xSize / 2)
     y = rng.uniform(-ySize / 2, ySize / 2)
-    z = 25
-    return mutils.Vector((x, y, z))
+    z = spawnHeight
+    return Vector((x, y, z))
 
 def RandomRotation():
+    """Return a uniformly ditributed rotation Euler angle."""
     alpha = rng.random() * 2 * np.pi
     beta = np.arccos(2 * rng.random() - 1)
     gamma = rng.random() * 2 * np.pi
-    return mutils.Euler((alpha, beta, gamma))
+    return Euler((alpha, beta, gamma))
 
-def RandomScale(mu, sigma):
-    size = rng.normal(mu, sigma)
-    return mutils.Vector((size, size, size))
+def RandomScale(mean, std):
+    """Return a normally distributed scale vector.
+    
+    mean and std represent the mean and standard deviation of the normal distribution respectively.
+    """
+    size = rng.normal(mean, std)
+    return Vector((size, size, size))
 
-def GenerateParticle(location, rotation = mutils.Euler((0,0,0)), scale = mutils.Vector((1,1,1)), type = "ACTIVE", name = "None"):
-    bpy.ops.mesh.primitive_cube_add()
+def GenerateParticle(location, rotation = Euler((0,0,0)), scale = Vector((1,1,1)), type = "ACTIVE", name = "None"):
+    bpy.ops.mesh.primitive_cube_add(size = 1)
     obj = bpy.context.selected_objects[0]
-    obj.matrix_world = mutils.Matrix.LocRotScale(location, rotation, scale)
+    obj.matrix_world = Matrix.LocRotScale(location, rotation, scale)
     obj.name = name
     bpy.ops.rigidbody.object_add(type = type)
     obj.rigid_body.collision_shape = 'CONVEX_HULL'
@@ -41,9 +59,9 @@ def CopySelection():
         x, y, z = location
         name = obj.name
         
-        GenerateParticle(location - mutils.Vector((np.sign(x) * xSize, 0, 0)), rotation, scale, "ACTIVE", name[:-3] + ".x_")
-        GenerateParticle(location - mutils.Vector((0, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + "._y") 
-        GenerateParticle(location - mutils.Vector((np.sign(x) * xSize, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + ".xy")
+        GenerateParticle(location - Vector((np.sign(x) * xSize, 0, 0)), rotation, scale, "ACTIVE", name[:-3] + ".x_")
+        GenerateParticle(location - Vector((0, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + "._y") 
+        GenerateParticle(location - Vector((np.sign(x) * xSize, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + ".xy")
 
 def InsideBoundary(s, size):
     return np.abs(s) < size / 2
@@ -69,13 +87,13 @@ def DeleteOldStep():
         # Check if a MAIN particle has moved OUTSIDE the boundary, and create a new MAIN
         if name[-2:] == "__":
             if not InsideBoundary(x, xSize) and InsideBoundary(y, ySize):
-                GenerateParticle(location - mutils.Vector((np.sign(x) * xSize, 0, 0)), rotation, scale, "ACTIVE", name)
+                GenerateParticle(location - Vector((np.sign(x) * xSize, 0, 0)), rotation, scale, "ACTIVE", name)
                 
             if InsideBoundary(x, xSize) and not InsideBoundary(y, ySize):
-                GenerateParticle(location - mutils.Vector((0, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name)
+                GenerateParticle(location - Vector((0, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name)
                 
             if not InsideBoundary(x, xSize) and not InsideBoundary(y, ySize):
-                GenerateParticle(location - mutils.Vector((np.sign(x) * xSize, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name)
+                GenerateParticle(location - Vector((np.sign(x) * xSize, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name)
 
         # Check if a COPIED particle has moved INSIDE the boundary, and relabel it as the MAIN
         if not name[-2:] == "__":
@@ -101,6 +119,7 @@ def Intersect(obj1, obj2):
     bpy.ops.object.modifier_add(type='BOOLEAN')
     obj1.modifiers["Boolean"].operation = 'INTERSECT'
     obj1.modifiers["Boolean"].object = obj2
+    obj1.modifiers["Boolean"].use_self = True
     bpy.ops.object.modifier_apply(modifier="Boolean")
 
 def main():
@@ -114,21 +133,22 @@ def main():
     bpy.context.scene.rigidbody_world.point_cache.frame_end = 10000
 
     n = 0
+    maxIterations = numberParticles * spawnInterval
     for i in range(maxIterations):
-        if (i % 20 == 0):
+        if (i % spawnInterval == 0):
             rand_loc = RandomLocation(xSize, ySize)
             rand_rot = RandomRotation()
-            rand_scale = RandomScale(1, 0)
+            rand_scale = RandomScale(particleSize, 0)
             GenerateParticle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".__")
             n += 1
         
         #print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m" + str(i) + "/" + str(maxIterations))
-        print(str(round((i / maxIterations) ** 2.5 * maxIterations / (2.5 * extraIterations + maxIterations) * 100)) + "%")
+        print(str(round((i / maxIterations) ** 3 * maxIterations / (3 * extraIterations + maxIterations) * 100)) + "%")
         ReorganizePeriodicly()
         bpy.context.scene.frame_set(frame = i)
 
     for i in range(maxIterations, maxIterations + extraIterations):
-        print(str(round((2.5 * i / maxIterations - 1.5) * maxIterations / (2.5 * extraIterations + maxIterations) * 100)) + "%")
+        print(str(round((3 * i / maxIterations - 2) * maxIterations / (3 * extraIterations + maxIterations) * 100)) + "%")
         ReorganizePeriodicly()
         bpy.context.scene.frame_set(frame = i)
     
@@ -148,7 +168,7 @@ def main():
     set.name = "Set"
     
 
-    bpy.ops.mesh.primitive_cube_add(size = 1, location = mutils.Vector((0, 0, 12.5)), scale = mutils.Vector((xSize, ySize, 25)))
+    bpy.ops.mesh.primitive_cube_add(size = 1, location = Vector((0, 0, spawnHeight / 2)), scale = Vector((xSize, ySize, spawnHeight + 1)))
     cube = bpy.data.objects["Cube"]
 
     Intersect(set, cube)
