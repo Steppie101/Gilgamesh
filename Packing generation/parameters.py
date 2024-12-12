@@ -1,2 +1,4 @@
-box_width = 10
-box_length = 10
+import bpy
+import os
+
+testvalue = 823

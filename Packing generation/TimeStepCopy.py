@@ -1,4 +1,10 @@
 import bpy
+import sys
+
+file_path = bpy.path.abspath("//")
+sys.path.append(file_path)
+
+import parameters
 
 Size = 10
 
