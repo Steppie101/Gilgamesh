@@ -2,10 +2,13 @@ import bpy
 import numpy as np
 from mathutils import Euler, Vector, Matrix
 import sys
-from parameters import *
+import os
 
 filepath = bpy.path.abspath("//")
 sys.path.append(filepath)
+print("PATH:", filepath)
+
+import parameters as params
 
 rng = np.random.default_rng()
 
@@ -21,7 +24,7 @@ def RandomLocation(xSize, ySize):
     """
     x = rng.uniform(-xSize / 2, xSize / 2)
     y = rng.uniform(-ySize / 2, ySize / 2)
-    z = spawnHeight
+    z = params.spawnHeight
     return Vector((x, y, z))
 
 def RandomRotation():
@@ -39,21 +42,32 @@ def RandomScale(mean = 1, std = 0):
     size = rng.normal(mean, std)
     return Vector((size, size, size))
 
-def GenerateParticle(location, rotation = Euler((0,0,0)), scale = Vector((1,1,1)), type = "ACTIVE", name = "None"):
-    bpy.ops.mesh.primitive_cube_add(size = 1)
+def GenerateParticle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = Vector((1,1,1)), type = "ACTIVE", name = "None"):
+    match params.particleType:
+        case "cube":
+            bpy.ops.mesh.primitive_cube_add()
+        case "sphere":
+            bpy.ops.mesh.primitive_uv_sphere_add()
+        case "cylinder":
+            bpy.ops.mesh.primitive_cylinder_add()
+        case "stl":
+            importpath = os.path.join(filepath, params.stlImportPath)
+            bpy.ops.wm.stl_import(filepath = importpath)
+
+
     obj = bpy.context.selected_objects[0]
     obj.matrix_world = Matrix.LocRotScale(location, rotation, scale)
     obj.name = name
 
     bpy.ops.rigidbody.object_add(type = type)
     body = bpy.context.object.rigid_body
-    body.collision_shape = collisionShape
-    body.friction = friction
-    body.restitution = bouncyness
+    body.collision_shape = params.collisionShape
+    body.friction = params.friction
+    body.restitution = params.bouncyness
     body.mesh_source = 'BASE'
-    body.collision_margin = collisionMargin
-    body.linear_damping = linearDamping
-    body.angular_damping = angularDamping
+    body.collision_margin = params.collisionMargin
+    body.linear_damping = params.linearDamping
+    body.angular_damping = params.angularDamping
 
 def CopySelection():    
     bpy.ops.object.select_pattern(pattern = 'Particle*', extend = False)
@@ -63,9 +77,9 @@ def CopySelection():
         x, y, z = location
         name = obj.name
         
-        GenerateParticle(location - Vector((np.sign(x) * xSize, 0, 0)), rotation, scale, "ACTIVE", name[:-3] + ".x_")
-        GenerateParticle(location - Vector((0, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + "._y") 
-        GenerateParticle(location - Vector((np.sign(x) * xSize, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + ".xy")
+        GenerateParticle(location - Vector((np.sign(x) * params.xSize, 0, 0)), rotation, scale, "ACTIVE", name[:-3] + ".x_")
+        GenerateParticle(location - Vector((0, np.sign(y) * params.ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + "._y") 
+        GenerateParticle(location - Vector((np.sign(x) * params.xSize, np.sign(y) * params.ySize, 0)), rotation, scale, "ACTIVE", name[:-3] + ".xy")
 
 def InsideBoundary(s, size):
     return np.abs(s) < size / 2
@@ -85,23 +99,23 @@ def DeleteOldStep():
         name = obj.name
         
         # Delete particles outside the boundary
-        if not InsideBoundary(x, xSize) or not InsideBoundary(y, ySize):
+        if not InsideBoundary(x, params.xSize) or not InsideBoundary(y, params.ySize):
             DeleteObject(obj)
 
         # Check if a MAIN particle has moved OUTSIDE the boundary, and create a new MAIN
         if name[-2:] == "__":
-            if not InsideBoundary(x, xSize) and InsideBoundary(y, ySize):
-                GenerateParticle(location - Vector((np.sign(x) * xSize, 0, 0)), rotation, scale, "ACTIVE", name)
+            if not InsideBoundary(x, params.xSize) and InsideBoundary(y, params.ySize):
+                GenerateParticle(location - Vector((np.sign(x) * params.xSize, 0, 0)), rotation, scale, "ACTIVE", name)
                 
-            if InsideBoundary(x, xSize) and not InsideBoundary(y, ySize):
-                GenerateParticle(location - Vector((0, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name)
+            if InsideBoundary(x, params.xSize) and not InsideBoundary(y, params.ySize):
+                GenerateParticle(location - Vector((0, np.sign(y) * params.ySize, 0)), rotation, scale, "ACTIVE", name)
                 
-            if not InsideBoundary(x, xSize) and not InsideBoundary(y, ySize):
-                GenerateParticle(location - Vector((np.sign(x) * xSize, np.sign(y) * ySize, 0)), rotation, scale, "ACTIVE", name)
+            if not InsideBoundary(x, params.xSize) and not InsideBoundary(y, params.ySize):
+                GenerateParticle(location - Vector((np.sign(x) * params.xSize, np.sign(y) * params.ySize, 0)), rotation, scale, "ACTIVE", name)
 
         # Check if a COPIED particle has moved INSIDE the boundary, and relabel it as the MAIN
         if not name[-2:] == "__":
-            if InsideBoundary(x, xSize) and InsideBoundary(y, ySize):
+            if InsideBoundary(x, params.xSize) and InsideBoundary(y, params.ySize):
                 obj = bpy.data.objects[name[:-2] + "__"]
                 DeleteObject(obj)
                 obj = bpy.data.objects[name]
@@ -118,7 +132,6 @@ def ReorganizePeriodicly():
 
 def Intersect(obj1, obj2):
     bpy.ops.object.select_all(action='DESELECT')
-    obj1.select_set(True)
     bpy.context.view_layer.objects.active = obj1
     bpy.ops.object.modifier_add(type='BOOLEAN')
     obj1.modifiers["Boolean"].operation = 'INTERSECT'
@@ -126,33 +139,39 @@ def Intersect(obj1, obj2):
     obj1.modifiers["Boolean"].use_self = True
     bpy.ops.object.modifier_apply(modifier="Boolean")
 
+def ExportSTL(obj):
+    exportpath = os.path.join(filepath, params.stlExportPath)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.wm.stl_export(filepath = exportpath, export_selected_objects = True)
+
+
 def main():
     bpy.ops.object.select_all(action = 'SELECT')
     bpy.ops.object.delete(use_global=False)
 
-    bpy.ops.mesh.primitive_plane_add(size = 2 * max(xSize, ySize) + 5)
+    bpy.ops.mesh.primitive_plane_add(size = 2 * max(params.xSize, params.ySize) + 5)
     bpy.ops.rigidbody.object_add(type = 'PASSIVE')
 
     bpy.context.scene.frame_end = 10000
     bpy.context.scene.rigidbody_world.point_cache.frame_end = 10000
 
     n = 0
-    maxIterations = numberParticles * spawnInterval
+    maxIterations = params.numberParticles * params.spawnInterval
     for i in range(maxIterations):
-        if (i % spawnInterval == 0):
-            rand_loc = RandomLocation(xSize, ySize)
+        if (i % params.spawnInterval == 0):
+            rand_loc = RandomLocation(params.xSize, params.ySize)
             rand_rot = RandomRotation()
-            rand_scale = RandomScale(1, std = scaleDeviation)
+            rand_scale = RandomScale(1, std = params.scaleDeviation)
             GenerateParticle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".__")
             n += 1
         
         #print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m" + str(i) + "/" + str(maxIterations))
-        print(str(round((i / maxIterations) ** 3 * maxIterations / (3 * extraIterations + maxIterations) * 100)) + "%")
+        print(str(round((i / maxIterations) ** 3 * maxIterations / (3 * params.extraIterations + maxIterations) * 100)) + "%")
         ReorganizePeriodicly()
         bpy.context.scene.frame_set(frame = i)
 
-    for i in range(maxIterations, maxIterations + extraIterations):
-        print(str(round((3 * i / maxIterations - 2) * maxIterations / (3 * extraIterations + maxIterations) * 100)) + "%")
+    for i in range(maxIterations, maxIterations + params.extraIterations):
+        print(str(round((3 * i / maxIterations - 2) * maxIterations / (3 * params.extraIterations + maxIterations) * 100)) + "%")
         ReorganizePeriodicly()
         bpy.context.scene.frame_set(frame = i)
     
@@ -172,12 +191,15 @@ def main():
     set.name = "Set"
     
 
-    bpy.ops.mesh.primitive_cube_add(size = 1, location = Vector((0, 0, spawnHeight / 2)), scale = Vector((xSize, ySize, spawnHeight + 1)))
+    bpy.ops.mesh.primitive_cube_add(size = 1, location = Vector((0, 0, params.spawnHeight / 2)), scale = Vector((params.xSize, params.ySize, params.spawnHeight + 1)))
     cube = bpy.data.objects["Cube"]
 
     Intersect(set, cube)
     DeleteObject(cube)
 
+    ExportSTL(set)
+
 
 if __name__ == "__main__":
     main()
+    
