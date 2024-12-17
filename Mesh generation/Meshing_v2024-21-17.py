@@ -28,6 +28,7 @@
 
 
 def Remeshing_Corners(mesh_file):
+    """Remeshes the surface and then fixes the corners where the different geometries meet"""
     mesh = trimesh.load(mesh_file)
     remeshed_vertices, remeshed_faces = trimesh.remesh.subdivide(
             mesh.vertices,
