@@ -17,7 +17,7 @@ import parameters as params
 
 def ParameterInit():
     minInterval = 12
-    if params.spawnInterval < minInterval or not isInt(params.spawnInterval):
+    if params.spawnInterval < minInterval or not IsInt(params.spawnInterval):
         raise Exception("Spawn interval too small")
     
     #Possibly add different exception for uniform distribution, with 1 + params.scaleDeveation
@@ -27,7 +27,7 @@ def ParameterInit():
     if params.scaleDeviation > 2:
         raise Exception("Too large standard deviation")  
 
-def isInt(x):
+def IsInt(x):
     return not x % 1
 
 def RandomLocation(rng, xSize, ySize):
@@ -234,6 +234,11 @@ def main():
 
     plane = bpy.data.objects["Plane"]
     DeleteObject(plane)
+
+    bpy.ops.object.select_all(action = 'SELECT')
+    for obj in bpy.context.selected_objects:    
+        obj.scale *= 1.05
+        
     
     bpy.ops.object.select_all(action = 'SELECT')
     bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
