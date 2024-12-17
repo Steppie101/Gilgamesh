@@ -3,21 +3,13 @@ import numpy as np
 from mathutils import Euler, Vector, Matrix
 import sys
 import os
+import time
 
 filepath = bpy.path.abspath("//")
 sys.path.append(filepath)
 print("PATH:", filepath)
 
 import parameters as params
-
-rng = np.random.default_rng()
-if params.seed == "DEFAULT":
-    seed = rng.integers(1 << 32)
-else: seed = params.seed
-rng = np.random.default_rng(seed)
-print("Used seed:", seed)
-
-
 
 #=======================#=============#========================#
 #-----------------------:  Functions  :------------------------#
@@ -26,14 +18,19 @@ print("Used seed:", seed)
 def ParameterInit():
     minInterval = 12
     if params.spawnInterval < minInterval or not isInt(params.spawnInterval):
-        print("Spawn interval must be an integer of at least 12. Setting spawn interval to default (12)")
-        params.spawnInterval = minInterval
+        raise Exception("Spawn interval too small")
     
+    #Possibly add different exception for uniform distribution, with 1 + params.scaleDeveation
+    if params.xSize < 1 + 2 * params.scaleDeviation or params.ySize < 1 + 2 * params.scaleDeviation:
+        raise Exception("Wall size too small")
+
+    if params.scaleDeviation > 2:
+        raise Exception("Too large standard deviation")  
 
 def isInt(x):
     return not x % 1
 
-def RandomLocation(xSize, ySize):
+def RandomLocation(rng, xSize, ySize):
     """Return a uniformly distributed location vector.
     
     The x and y coordinates are taken in their respective ranges xSize and ySize, centered at (0,0).
@@ -44,14 +41,14 @@ def RandomLocation(xSize, ySize):
     z = params.spawnHeight
     return Vector((x, y, z))
 
-def RandomRotation():
+def RandomRotation(rng):
     """Return a uniformly ditributed rotation Euler angle."""
     alpha = rng.random() * 2 * np.pi
     beta = np.arccos(2 * rng.random() - 1)
     gamma = rng.random() * 2 * np.pi
     return Euler((alpha, beta, gamma))
 
-def RandomScale(mean = 1, deviation = 0):
+def RandomScale(rng, mean = 1, deviation = 0):
     """Return a normally distributed scale vector.
     
     mean and std represent the mean and standard deviation of the normal distribution respectively.
@@ -68,20 +65,24 @@ def RandomScale(mean = 1, deviation = 0):
             size = rng.lognormal(mean, deviation)
     return Vector((size, size, size))
 
-def GenerateParticle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = Vector((1,1,1)), type = "ACTIVE", name = "None"):
+def GenerateParticle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = Vector((1,1,1)), type = "ACTIVE", name = "None", rescaleFactor = 1):
     match params.particleType:
         case "CUBE":
             bpy.ops.mesh.primitive_cube_add()
-        case "SPHERE":
-            bpy.ops.mesh.primitive_uv_sphere_add()
+        case "UVSPHERE":
+            bpy.ops.mesh.primitive_uv_sphere_add(segments = params.uvSegments, ring_count = params.uvRings, radius = params.uvRadius)
+        case "ICOSPHERE":
+            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions = params.icoSubdivisions, radius = params.icoRadius)
         case "CYLINDER":
-            bpy.ops.mesh.primitive_cylinder_add()
+            depth = np.sqrt((params.cylinderRatio ** 2)/(1 + params.cylinderRatio ** 2))
+            radius = np.sqrt(1/(1 + params.cylinderRatio ** 2))
+            bpy.ops.mesh.primitive_cylinder_add(radius=radius, depth=depth)
         case "STL":
             importpath = os.path.join(filepath, params.stlImportPath)
             bpy.ops.wm.stl_import(filepath = importpath)
 
     obj = bpy.context.selected_objects[0]
-    obj.matrix_world = Matrix.LocRotScale(location, rotation, scale)
+    obj.matrix_world = Matrix.LocRotScale(location, rotation, scale * rescaleFactor)
     obj.name = name
 
     bpy.ops.rigidbody.object_add(type = type)
@@ -90,7 +91,9 @@ def GenerateParticle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scal
     body.friction = params.friction
     body.restitution = params.bouncyness
     body.mesh_source = 'BASE'
-    body.collision_margin = params.collisionMargin
+    if params.collisionMargin:
+        body.use_margin = True
+        body.collision_margin = params.collisionMargin
     body.linear_damping = params.linearDamping
     body.angular_damping = params.angularDamping
 
@@ -171,8 +174,22 @@ def ExportSTL(obj):
     bpy.context.view_layer.objects.active = obj
     bpy.ops.wm.stl_export(filepath = exportpath, export_selected_objects = True)
 
+rng = np.random.default_rng()
+if params.seed == "DEFAULT":
+    seed = rng.integers(1 << 32)
+else: seed = params.seed
+rng = np.random.default_rng(seed)
+print("Used seed:", seed)
+
+particleSize = 1
+GenerateParticle()
+obj = bpy.context.selected_objects[0]
+rescaleFactor = 1 / obj.dimensions.length
+
 
 def main():
+    startT = time.time()
+
     bpy.ops.object.select_all(action = 'SELECT')
     bpy.ops.object.delete(use_global=False)
 
@@ -186,19 +203,27 @@ def main():
     maxIterations = params.numberParticles * params.spawnInterval
     for i in range(maxIterations):
         if (i % params.spawnInterval == 0):
-            rand_loc = RandomLocation(params.xSize, params.ySize)
-            rand_rot = RandomRotation()
-            rand_scale = RandomScale(deviation = params.scaleDeviation)
-            GenerateParticle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".__")
+            rand_loc = RandomLocation(rng, params.xSize, params.ySize)
+            rand_rot = RandomRotation(rng)
+            rand_scale = RandomScale(rng, deviation = params.scaleDeviation)
+            GenerateParticle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".__", rescaleFactor)
             n += 1
-        
-        #print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m" + str(i) + "/" + str(maxIterations))
-        print(str(round((i / maxIterations) ** 3 * maxIterations / (3 * params.extraIterations + maxIterations) * 100)) + "%")
+        if i:
+            fraction = (i / maxIterations) ** 3 * maxIterations / (3 * params.extraIterations + maxIterations)
+            print(str(round(fraction * 100)) + "%,")
+        if i > 100:
+            nowT = time.time()
+            timeLeft = (nowT - startT) / fraction * (1 - fraction)
+            #print("\x1b[1;33;40m" + "|" + round(i / maxIterations * 100) * "=" + ">" + "\x1b[1;31;40m" + (100 - round(i / maxIterations * 100)) * "-" + "|" + "\x1b[0m" + str(i) + "/" + str(maxIterations))
+            print(round(timeLeft), "seconds left")
         ReorganizePeriodicly()
         bpy.context.scene.frame_set(frame = i)
 
     for i in range(maxIterations, maxIterations + params.extraIterations):
-        print(str(round((3 * i / maxIterations - 2) * maxIterations / (3 * params.extraIterations + maxIterations) * 100)) + "%")
+        fraction = (3 * i / maxIterations - 2) * maxIterations / (3 * params.extraIterations + maxIterations)
+        nowT = time.time()
+        timeLeft = (nowT - startT) / fraction * (1 - fraction)
+        print(str(round(fraction * 100)) + "%", round(timeLeft), "seconds left")
         ReorganizePeriodicly()
         bpy.context.scene.frame_set(frame = i)
     
