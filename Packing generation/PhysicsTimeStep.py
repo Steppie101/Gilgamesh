@@ -11,10 +11,27 @@ print("PATH:", filepath)
 import parameters as params
 
 rng = np.random.default_rng()
+if params.seed == "DEFAULT":
+    seed = rng.integers(1 << 32)
+else: seed = params.seed
+rng = np.random.default_rng(seed)
+print("Used seed:", seed)
 
-#╔═══════════════════════╦═════════════╦════════════════════════╗#
-#╠┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╌╣  Functions  ╠╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╣#
-#╚═══════════════════════╩═════════════╩════════════════════════╝#
+
+
+#=======================#=============#========================#
+#-----------------------:  Functions  :------------------------#
+#=======================#=============#========================#
+
+def ParameterInit():
+    minInterval = 12
+    if params.spawnInterval < minInterval or not isInt(params.spawnInterval):
+        print("Spawn interval must be an integer of at least 12. Setting spawn interval to default (12)")
+        params.spawnInterval = minInterval
+    
+
+def isInt(x):
+    return not x % 1
 
 def RandomLocation(xSize, ySize):
     """Return a uniformly distributed location vector.
@@ -34,26 +51,34 @@ def RandomRotation():
     gamma = rng.random() * 2 * np.pi
     return Euler((alpha, beta, gamma))
 
-def RandomScale(mean = 1, std = 0):
+def RandomScale(mean = 1, deviation = 0):
     """Return a normally distributed scale vector.
     
     mean and std represent the mean and standard deviation of the normal distribution respectively.
     """
-    size = rng.normal(mean, std)
+    if deviation == 0:
+        return Vector((mean, mean, mean))
+    
+    match params.distribution:
+        case "UNIFORM":
+            size = rng.uniform(mean - deviation, mean + deviation)
+        case "NORMAL":
+            size = rng.normal(mean, deviation)
+        case "LOGNORMAL":
+            size = rng.lognormal(mean, deviation)
     return Vector((size, size, size))
 
 def GenerateParticle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = Vector((1,1,1)), type = "ACTIVE", name = "None"):
     match params.particleType:
-        case "cube":
+        case "CUBE":
             bpy.ops.mesh.primitive_cube_add()
-        case "sphere":
+        case "SPHERE":
             bpy.ops.mesh.primitive_uv_sphere_add()
-        case "cylinder":
+        case "CYLINDER":
             bpy.ops.mesh.primitive_cylinder_add()
-        case "stl":
+        case "STL":
             importpath = os.path.join(filepath, params.stlImportPath)
             bpy.ops.wm.stl_import(filepath = importpath)
-
 
     obj = bpy.context.selected_objects[0]
     obj.matrix_world = Matrix.LocRotScale(location, rotation, scale)
@@ -140,7 +165,9 @@ def Intersect(obj1, obj2):
     bpy.ops.object.modifier_apply(modifier="Boolean")
 
 def ExportSTL(obj):
+    bpy.ops.object.select_all(action='DESELECT')
     exportpath = os.path.join(filepath, params.stlExportPath)
+    obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.wm.stl_export(filepath = exportpath, export_selected_objects = True)
 
@@ -161,7 +188,7 @@ def main():
         if (i % params.spawnInterval == 0):
             rand_loc = RandomLocation(params.xSize, params.ySize)
             rand_rot = RandomRotation()
-            rand_scale = RandomScale(1, std = params.scaleDeviation)
+            rand_scale = RandomScale(deviation = params.scaleDeviation)
             GenerateParticle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".__")
             n += 1
         
