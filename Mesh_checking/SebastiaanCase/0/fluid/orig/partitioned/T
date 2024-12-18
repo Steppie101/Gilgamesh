@@ -29,7 +29,7 @@ boundaryField
         interfaceType          	defaultInterface;
         k                       "k";
 
-        accType                 fixed;
+        accType                 aitken;
         relax                   1.0;
 
         // accType              aitken;
@@ -46,19 +46,6 @@ boundaryField
         secondOrder             false;
         nonOrthCorr             true;
         value                   $internalField;
-    }
-    inlet
-    {
-        type            fixedValue;
-        value           $internalField;
-    }
-    outlet
-    {
-        type            zeroGradient;
-    }
-    sides
-    {
-        type            zeroGradient;
     }
 }
 

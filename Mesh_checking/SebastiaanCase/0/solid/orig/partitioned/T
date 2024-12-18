@@ -35,19 +35,6 @@ boundaryField
         nonOrthCorr             true;
         value                   $internalField;
     }
-    
-        inlet
-    {
-        type            zeroGradient;
-    }
-    outlet
-    {
-        type            zeroGradient;
-    }
-    sides
-    {
-        type            zeroGradient;
-    }
 }
 
 // ************************************************************************* //

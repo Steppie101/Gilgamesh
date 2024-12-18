@@ -16,7 +16,6 @@ FoamFile
 
 regions
 (
-    //(fluid (icoFluid transportTemperature transportSpecie) )
     (fluid (icoFluid transportTemperature) )
     (solid (conductTemperature) )
 );

@@ -26,7 +26,7 @@ boundaryField
         type                    regionCoupledScalarFlux; //regionCoupledScalarJump;
         interfaceType           defaultInterface;
         k                       "DCO2";
-        accType                 fixed;
+        accType                 aitken;
         relax                   1.0;
         neighbourRegionName     solid;
         neighbourPatchName      solid_to_fluid;
@@ -34,19 +34,6 @@ boundaryField
         secondOrder             false;
         nonOrthCorr             true;
         value                   $internalField;
-    }
-    inlet
-    {
-        type            fixedValue;
-        value           0.017;
-    }
-    outlet
-    {
-        type            zeroGradient;
-    }
-    sides
-    {
-        type            zeroGradient;
     }
 }
 

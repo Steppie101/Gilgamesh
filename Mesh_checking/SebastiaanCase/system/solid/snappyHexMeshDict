@@ -129,6 +129,8 @@ castellatedMeshControls
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
     locationInMesh (0 0 0);
+
+    allwFreeStandingZoneFaces true;
 }
 
 // Settings for the snapping.
@@ -276,6 +278,8 @@ meshQualityControls
     nSmoothScale 5;
     //- amount to scale back displacement at error points
     errorReduction 0.75;
+
+    minTetQuality           -1e+30;
 }
 
 // Advanced

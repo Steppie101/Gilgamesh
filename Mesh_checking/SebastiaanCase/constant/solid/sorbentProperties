@@ -30,6 +30,11 @@ Ea2               Ea1 [1  2 -2  0 -1 0 0]  28000;  // Activation energy (J/mol)
 dH2               dH1 [1  2 -2  0 -1 0 0] -50000;  // Enthalpy of reaction (J/mol)
 dS2               dS1 [1  2 -2 -1 -1 0 0] -130;    // Entropy of reaction (J/molK)
 
+A3		  A1  [0  6 -1  0 -2 0 0]  3.8e-4; // Arrhenius prefactor (mol/m3)^-2 / s
+Ea3               Ea1 [1  2 -2  0 -1 0 0]  28000;  // Activation energy (J/mol)
+dH3               dH1 [1  2 -2  0 -1 0 0] -50000;  // Enthalpy of reaction (J/mol)
+dS3               dS1 [1  2 -2 -1 -1 0 0] -130;    // Entropy of reaction (J/molK)
+
 
 // Henry coefficients
 HrCO2		HrCO2 [0 0 0 0 0 0 0] 0.83;
