@@ -32,7 +32,8 @@ def ParameterInit():
     
     if params.numberParticles > 100:
         while True:
-            particle_input = input("Number of particles is large, the program will take a long time. Do you wish to continue? (Y/n)")
+            print("Number of particles is", params.numberParticles, "the program will take a long time.")
+            particle_input = input("Do you wish to continue? (Y/n) ")
             if particle_input in ["Y", "Yes","yes"]:
                 print("Continuing...")
                 break
@@ -50,6 +51,71 @@ def ParameterInit():
         
     if params.particleType == "ICOSPHERE" and params.icoSubdivisions > 6:
         print("Number of faces in icosphere is very large, the program will take a long time. \n A smaller value for icoSubdivisions is advised.")
+    
+    if params.particleType == "STL" and params.collisionShape in ["BOX", "SPHERE", "CYLINDER"]:
+        while True:
+            print("Particle type is STL, while collisionShape is", params.collisionShape)
+            cShape_input = input("Do you wish to continue? (Y/n) ")
+            if cShape_input in ["Y", "Yes","yes"]:
+                print("Continuing...")
+                break
+            elif cShape_input.lower() in ["n", "no"]:
+                raise Exception("User interruption")
+                break
+            else:
+                print("Invalid input. Please enter Y or n.")
+    
+    if params.particleType == "BOX" and params.collisionShape != "BOX":
+        while True:
+            print("Particle type is BOX, while collisionShape is", params.collisionShape)
+            cShape_input = input("Do you wish to continue? (Y/n) ")
+            if cShape_input in ["Y", "Yes","yes"]:
+                print("Continuing...")
+                break
+            elif cShape_input.lower() in ["n", "no"]:
+                raise Exception("User interruption")
+                break
+            else:
+                print("Invalid input. Please enter Y or n.")
+                
+    if params.particleType in ["UVSPHERE", "ICOSPHERE"] and params.collisionShape != "SPHERE":
+        while True:
+            print("Particle type is",params.particleType,", while collisionShape is", params.collisionShape)
+            cShape_input = input("Do you wish to continue? (Y/n) ")
+            if cShape_input in ["Y", "Yes","yes"]:
+                print("Continuing...")
+                break
+            elif cShape_input.lower() in ["n", "no"]:
+                raise Exception("User interruption")
+                break
+            else:
+                print("Invalid input. Please enter Y or n.")
+                
+    if params.particleType == "CYLINDER" and params.collisionshape != "CYLINDER":
+        while True:
+            print("Particle type is CYLINDER, while collisionShape is", params.collisionShape)
+            cShape_input = input("Do you wish to continue? (Y/n) ")
+            if cShape_input in ["Y", "Yes","yes"]:
+                print("Continuing...")
+                break
+            elif cShape_input.lower() in ["n", "no"]:
+                raise Exception("User interruption")
+                break
+            else:
+                print("Invalid input. Please enter Y or n.")
+    
+    if params.collisionShape == "MESH" and collisionMargin == 0:
+        print("Mesh collisionshape is used with 0 collisionMargin.")
+    
+    if params.particleType == "UVSPHERE" and params.uvRadius != 1.0:
+        raise Exception("Radius not normalised, change uvRadius to 1.0")
+    
+    if params.particleType == "ICOSPHERE" and params.icoRadius != 1.0:
+        raise Exception("Radius not normalised, change icoRadius to 1.0")
+        
+    if params.particleType == "CYLINDER" and params.cylinderRatio != 2.0:
+        raise Exception("Cylinder not normalised, change cylinderRatio to 2.0")
+
 
 def IsInt(x):
     return not x % 1

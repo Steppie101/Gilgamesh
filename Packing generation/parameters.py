@@ -6,7 +6,7 @@
 
 
 #CUBE, UVSPHERE, ICOSPHERE, CYLINDER, STL
-particleType = "CUBE"
+particleType = "STL"
 stlImportPath = "stl_files/ring.stl"
 stlExportPath = "stl_files/test.stl"
 spawnInterval = 20
