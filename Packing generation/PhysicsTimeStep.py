@@ -17,15 +17,39 @@ import parameters as params
 
 def ParameterInit():
     minInterval = 12
-    if params.spawnInterval < minInterval or not IsInt(params.spawnInterval):
+    if params.spawnInterval < minInterval:
         raise Exception("Spawn interval too small")
+        
+    if not IsInt(params.spawnInterval):
+        raise Exception("Spawn interval is not an integer")
     
     #Possibly add different exception for uniform distribution, with 1 + params.scaleDeveation
     if params.xSize < 1 + 2 * params.scaleDeviation or params.ySize < 1 + 2 * params.scaleDeviation:
         raise Exception("Wall size too small")
 
     if params.scaleDeviation > 2:
-        raise Exception("Too large standard deviation")  
+        raise Exception("Too large standard deviation")
+    
+    if params.numberParticles > 100:
+        while True:
+            particle_input = input("Number of particles is large, the program will take a long time. Do you wish to continue? (Y/n)")
+            if particle_input in ["Y", "Yes","yes"]:
+                print("Continuing...")
+                break
+            elif particle_input.lower() in ["n", "no"]:
+                raise Exception("User interruption")
+                break
+            else:
+                print("Invalid input. Please enter Y or n.")
+        
+    if params.particleType == "UVSPHERE" and (params.uvSegments > 200 or params.uvRings > 100):
+        print("Number of faces in uvsphere is very large, the program will take a long time. \n Smaller values of uvSegments and/or uvRings is advised")
+        
+    if params.particleType == "UVSPHERE" and 2 * params.uvRings != params.uvSegments:
+        print("Faces on uvsphere are not square, for square faces, uvSegments = 2 * uvRings")
+        
+    if params.particleType == "ICOSPHERE" and params.icoSubdivisions > 6:
+        print("Number of faces in icosphere is very large, the program will take a long time. \n A smaller value for icoSubdivisions is advised.")
 
 def IsInt(x):
     return not x % 1
@@ -274,6 +298,7 @@ DeleteObject(obj)
 
 
 def main():
+    ParameterInit()
     bpy.ops.object.select_all(action = 'SELECT')
     bpy.ops.object.delete(use_global = False)
 
