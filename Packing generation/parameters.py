@@ -5,8 +5,14 @@
 
 
 
+# CUBE, SPHERE, CYLINDER, STL
+particleType = "CUBE"
+stlImportPath = "stl_files/ring.stl"
+stlExportPath = "stl_files/test.stl"
+spawnInterval = 20
+
 #CUBE, UVSPHERE, ICOSPHERE, CYLINDER, STL
-particleType = "STL"
+particleType = "UVSPHERE"
 stlImportPath = "stl_files/ring.stl"
 stlExportPath = "stl_files/test.stl"
 spawnInterval = 20
@@ -26,22 +32,21 @@ icoRadius = 1.0
 icoSubdivisions = 2 #int
 
 #spawnInterval = int(max(np.sqrt(2 * particleSize / g) * framesPerSecond + 1, spawnInterval))
-xSize = 3
-ySize = 3
+xSize = 1.5
+ySize = 1.5
 zSize = "DEFAULT"
 numberParticles = 10
 extraIterations = 150
 spawnHeight = 25
-overlapSize = 0.01
 
 # BOX, SPHERE, CYLINDER, CONVEX_HULL, MESH (with MESH a collision margin is recommended)
-collisionShape = 'BOX'
+collisionShape = 'SPHERE'
 #Surface Friction Factor ( 0 < friction_factor < 1 )
 friction = 0.5
 #Surface Restitution Factor (0 < restitution_factor < 1)
 bouncyness = 0.0
 #Collision margin (lower value = more accuracy, 0 perfect value)
-collisionMargin = 0
+collisionMargin = -0.1
 
 #linear_damping(amount of linear velicity particle is lost over time)
 linearDamping = 0.04
