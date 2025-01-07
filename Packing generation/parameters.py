@@ -6,9 +6,9 @@
 
 
 #CUBE, UVSPHERE, ICOSPHERE, CYLINDER, STL
-particleType = "STL"
-stlImportPath = "stl_files/ring.stl"
-stlExportPath = "stl_files/test.stl"
+particleType = "CUBE"
+stlImportPath = "stl_files/ring.stl" #Path relative to the blender file
+stlExportPath = "stl_files/test.stl" #Path relative to the blender file
 spawnInterval = 20
 
 #SHAPE SPECIFIC PARAMETERS

@@ -1,3 +1,6 @@
+
+#MAKE SURE CONSOLE IS VISIBLE BEFORE RUNNING
+
 import bpy
 import numpy as np
 from mathutils import Euler, Vector, Matrix
@@ -11,11 +14,27 @@ print("Path:", filepath)
 
 import parameters as params
 
+exportpath = os.path.join(filepath, params.stlExportPath)
+
 #=======================#=============#========================#
 #-----------------------:  Functions  :------------------------#
 #=======================#=============#========================#
 
 def ParameterInit():
+    ExportPathExists = os.path.exists(exportpath)
+    if ExportPathExists:
+        while True:
+            print("You are about to overwrite a file with your export. Export path is:\n",exportpath)
+            overwrite_input = input("Do you wish to continue? (Y/n) ")
+            if overwrite_input in ["Y","Yes","yes"]:
+                print("Continueing...")
+                break
+            elif overwrite_input.lower() in ["n","no"]:
+                raise Exception("User interruption")
+                break
+            else:
+                print("Invalid input. Please enter Y or n.")
+    
     minInterval = 12
     if params.spawnInterval < minInterval:
         raise Exception("Spawn interval too small")
@@ -344,7 +363,7 @@ def Intersect(obj1, obj2):
 
 def ExportSTL(obj):
     bpy.ops.object.select_all(action='DESELECT')
-    exportpath = os.path.join(filepath, params.stlExportPath)
+    
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.wm.stl_export(filepath = exportpath, export_selected_objects = True)
