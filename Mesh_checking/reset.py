@@ -2,7 +2,7 @@
 
 import os
 
-fileList = ["mesh_stl.vtk", "results.foam", "log.checkMesh.txt", "*.stl"]
+fileList = ["mesh_stl.vtk", "results.foam", "log.*", "*.stl"]
 dirList = ["constant", "VTK", "postProcessing"]
 
 for fileName in fileList:
