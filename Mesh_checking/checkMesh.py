@@ -1,15 +1,24 @@
 """Convert generated vtk to OpenFOAM, running checkMesh. Writing sets to vtk."""
 
-import os
+from functions import runCommand
 
 
-def runCommand(command, showWarnings=True):
-    if ">" not in command:
-        if showWarnings:
-            command += " > /dev/null"
-        else:
-            command += " &> /dev/null"
-    os.system(command)
+def showMeshErrors(region):
+    command = (
+        """
+    bash -c '
+    for file in constant/"""
+        + region
+        + """/polyMesh/sets/*; do
+      if [[ ! $(basename "$file") =~ ^region.* ]] && [[ -f $file ]]; then
+        numberOfErrors=$(sed -n "20p" "$file")
+        echo "$(basename "$file"): $numberOfErrors"
+      fi
+    done
+    '
+    """
+    )
+    runCommand(command)
 
 
 runCommand("mkdir constant", False)
@@ -21,7 +30,7 @@ for region in ["fluid", "solid"]:
     runCommand("mkdir constant/" + region, False)
     runCommand("mv constant/polyMesh constant/" + region, False)
 
-    print("Running checkMesh")
+    print("Running checkMesh...")
     runCommand(
         "checkMesh -region "
         + region
@@ -30,6 +39,9 @@ for region in ["fluid", "solid"]:
         + region
         + ".txt"
     )
+    print("Results: ")
+    showMeshErrors(region)
+    print()
 
 
 pointSets = ["unusedPoints", "multiRegionPoints", "nonManifoldPoints"]
@@ -41,8 +53,8 @@ cellSets = [
 faceSets = ["nonOrthoFaces", "lowWeightFaces", "lowVolRatioFaces"]
 
 
-for region in ["solid", "fluid"]:
-    print("Writing error in " + region + " to vtk")
+for region in ["fluid", "solid"]:
+    print("Writing mesh validty errors for " + region + " to vtk.")
     for typeSet in ["pointSet", "faceSet", "cellSet"]:
         for checkSet in eval(typeSet + "s"):
             runCommand(
@@ -52,69 +64,7 @@ for region in ["solid", "fluid"]:
                 + typeSet
                 + " "
                 + checkSet,
-                True,
+                False,
             )
 
 print("Done!")
-
-#     os.system("mkdir constant/fluid &>/dev/null")
-# commandSet = [
-#     "mkdir constant &>/dev/null",
-#     #
-#     # Fluid
-#     "vtkUnstructuredToFoam mesh_fluid.vtk",
-#     "mkdir constant/fluid &>/dev/null",
-#     "mv constant/polyMesh constant/fluid/",
-#     #
-#     # Solid
-#     "vtkUnstructuredToFoam mesh_solid.vtk",
-#     "mkdir constant/solid &> /dev/null",
-#     "mv constant/polyMesh constant/solid/",
-#
-# checkMesh
-# "checkMesh -region fluid -allGeometry -allTopology > log.checkMesh.fluid.txt",
-# "checkMesh -region solid -allGeometry -allTopology > log.checkMesh.solid.txt",
-#     "touch results.foam",
-
-
-# print("Converting fluid .vtk to Foam.")
-# for command in commandSet:
-#     if ">" not in command:
-#         command += " > /dev/null"
-
-#     os.system(command)
-# for checkSet in pointSets:
-#     os.system(
-#         "foamToVTK -region "
-#         + region
-#         + " -pointSet "
-#         + checkSet
-#         + ">/dev/null"
-#     )
-# for checkSet in cellSets:
-#     os.system(
-#         "foamToVTK -region "
-#         + region
-#         + " -cellSet "
-#         + checkSet
-#         + ">/dev/null"
-#     )
-# for checkSet in faceSets:
-#     os.system(
-#         "foamToVTK -region "
-#         + region
-#         + " -faceSet "
-#         + checkSet
-#         + ">/dev/null"
-#     )
-
-
-# foamToVTK -pointSet unusedPoints -region solid
-# foatToVTK -cellSet oneInternalFaceCells -region solid
-# foatToVTK -cellSet twoInternalFacesCells -region solid
-# foamToVTK -pointSet multiRegionPoints -region solid
-# foamToVTK -pointSet nonManifoldPoints -region solid
-# foamToVTK -faceSet nonOrthoFaces -region solid
-# foatToVTK -cellSet underdeterminedCells -region solid
-# foamToVTK -faceSet lowWeightFaces -region solid
-# foamToVTK -faceSet lowVolRatioFaces -region solid
