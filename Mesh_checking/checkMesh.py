@@ -1,36 +1,74 @@
-"""Convert generated vtk to OpenFOAM, running checkMesh. Writing sets to vtk."""
+"""
+Check the validaty of the fluid and solid mesh using OpenFOAM's checkMesh.
+
+Writing sets with mesh errors to .vtk.
+"""
 
 from functions import runCommand
 
 
 def showMeshErrors(region):
+    """
+    Prints the type and count of mesh errors for all files in the directory constant/{region}/polyMesh/sets.
+
+    Parameters
+    ----------
+    region : str
+        The mesh region to check for errors.
+
+    Returns
+    -------
+    None
+    """
     command = (
         """
-    bash -c '
-    for file in constant/"""
+            bash -c '
+for file in constant/"""
         + region
         + """/polyMesh/sets/*; do
-      if [[ ! $(basename "$file") =~ ^region.* ]] && [[ -f $file ]]; then
+    if [[ ! $(basename "$file") =~ ^region.* ]] && [[ -f $file ]]; then
         numberOfErrors=$(sed -n "20p" "$file")
+        if [[ -z "$numberOfErrors" ]]; then
+            numberOfErrors=$(sed -n "19p" "$file" | cut -d "(" -f 1)
+        fi
         echo "$(basename "$file"): $numberOfErrors"
-      fi
-    done
-    '
-    """
+    fi
+done
+'
+
+        """
     )
     runCommand(command)
 
 
-runCommand("mkdir constant", False)
-runCommand("touch results.foam", False)
+pointSets = [
+    "multiRegionPoints",
+    "nonManifoldPoints",
+    "unusedPoints",
+]
+
+cellSets = [
+    "concaveCells",
+    "highAspectRatioCells",
+    "oneInternalFaceCells",
+    "twoInternalFacesCells",
+    "underdeterminedCells",
+    "zeroVolumeCells",
+]
+faceSets = [
+    "concaveFaces",
+    "lowQualityTetFaces",
+    "lowVolRatioFaces",
+    "lowWeightFaces",
+    "nonOrthoFaces",
+    "skewFaces",
+    "zeroAreaFaces",
+]
+
+edgeSets = ["shortEdges"]
 
 for region in ["fluid", "solid"]:
-    print("Importing " + region + " .vtk to OpenFOAM")
-    runCommand("vtkUnstructuredToFoam mesh_" + region + ".vtk")
-    runCommand("mkdir constant/" + region, False)
-    runCommand("mv constant/polyMesh constant/" + region, False)
-
-    print("Running checkMesh...")
+    print("Running checkMesh on region " + region)
     runCommand(
         "checkMesh -region "
         + region
@@ -43,19 +81,8 @@ for region in ["fluid", "solid"]:
     showMeshErrors(region)
     print()
 
-
-pointSets = ["unusedPoints", "multiRegionPoints", "nonManifoldPoints"]
-cellSets = [
-    "oneInternalFaceCells",
-    "twoInternalFacesCells",
-    "underdeterminedCells",
-]
-faceSets = ["nonOrthoFaces", "lowWeightFaces", "lowVolRatioFaces"]
-
-
-for region in ["fluid", "solid"]:
     print("Writing mesh validty errors for " + region + " to vtk.")
-    for typeSet in ["pointSet", "faceSet", "cellSet"]:
+    for typeSet in ["cellSet", "edgeSet", "faceSet", "pointSet"]:
         for checkSet in eval(typeSet + "s"):
             runCommand(
                 "foamToVTK -region "
@@ -66,5 +93,6 @@ for region in ["fluid", "solid"]:
                 + checkSet,
                 False,
             )
+    print()
 
 print("Done!")
