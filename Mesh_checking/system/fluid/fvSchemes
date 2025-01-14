@@ -1,65 +1,63 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  1.5                                   |
-|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|  \\    /   O peration     | Version:  2306                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
-    version     2.0;
-    format      ascii;
-    class       dictionary;
-    object      fvSchemes;
+    version         2;
+    format          ascii;
+    class           dictionary;
+    object          fvSchemes;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 ddtSchemes
 {
-    default	bdf2;
+    default         bdf2;
 }
 
 gradSchemes
 {
-	default cellMDLimited Gauss linear 1;
-	grad(U) cellMDLimited Gauss linear 1;  
-	grad(p)  Gauss linear 1;  
+    default         cellMDLimited Gauss linear 1;
+    grad(U)         cellMDLimited Gauss linear 1;
+    grad(p)         Gauss linear 1;
 }
 
 divSchemes
 {
-    default               Gauss linear;
-    div(phi,U)            Gauss vanLeer;
-    div(phi,T)            Gauss vanLeer;
-    div(phi,CO2)          Gauss vanLeer;
-    div(phi,H2O)          Gauss vanLeer;
+    default         Gauss linear;
+    div(phi,U)      Gauss vanLeer;
+    div(phi,T)      Gauss vanLeer;
+    div(phi,CO2)    Gauss vanLeer;
+    div(phi,H2O)    Gauss vanLeer;
 }
 
 laplacianSchemes
 {
-    default         	 Gauss linear limited 1;
+    default         Gauss linear limited 1;
 }
 
 interpolationSchemes
 {
-    default         		linear;
+    default         linear;
 }
 
 snGradSchemes
 {
-    default          limited 1;
+    default         limited 1;
 }
 
 fluxRequired
 {
     default         no;
-    T;
-    U;
-    phi;
-    p;
-    pcorr;
-    CO2;
-    H2O;
+    T               ;
+    U               ;
+    phi             ;
+    p               ;
+    pcorr           ;
+    CO2             ;
+    H2O             ;
 }
-
-// ************************************************************************* //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
