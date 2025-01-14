@@ -6,49 +6,49 @@
 
 
 #CUBE, UVSPHERE, ICOSPHERE, CYLINDER, STL
-particleType = "CUBE"
-stlImportPath = "stl_files/ring.stl" #Path relative to the blender file
-stlExportPath = "stl_files/test.stl" #Path relative to the blender file
-spawnInterval = 20
+particle_type = "CUBE"
+stl_import_path = "stl_files/ring.stl" #Path relative to the blender file
+stl_export_path = "stl_files/test.stl" #Path relative to the blender file
+spawn_interval = 20
 
 #SHAPE SPECIFIC PARAMETERS
 #CYLINDER
-cylinderRatio = 2.0     #depth / radius
-cylinderFaces = 32      #only vertical faces (cylinder)
+cylinder_ratio = 2.0     #depth / radius
+cylinder_faces = 32      #only vertical faces (cylinder)
 
 #UVSPHERE
-uvRadius = 1.0
-uvSegments = 32 #int
-uvRings = 16 #int
+uv_radius = 1.0
+uv_segments = 32 #int
+uv_rings = 16 #int
 
 #ICOSPHERE
-icoRadius = 1.0
-icoSubdivisions = 2 #int
+ico_radius = 1.0
+ico_subdivisions = 2 #int
 
 #spawnInterval = int(max(np.sqrt(2 * particleSize / g) * framesPerSecond + 1, spawnInterval))
-xSize = 3
-ySize = 3
-zSize = "DEFAULT"
-numberParticles = 10
-extraIterations = 150
-spawnHeight = 25
-overlapSize = 0.01
+x_size = 3
+y_size = 3
+z_size = "DEFAULT"
+number_of_particles = 10
+extra_iterations = 150
+spawn_height = 25
+overlap_size = 0.01
 
 # BOX, SPHERE, CYLINDER, CONVEX_HULL, MESH (with MESH a collision margin is recommended)
-collisionShape = 'BOX'
+collision_shape = 'BOX'
 #Surface Friction Factor ( 0 < friction_factor < 1 )
 friction = 0.5
 #Surface Restitution Factor (0 < restitution_factor < 1)
 bouncyness = 0.0
 #Collision margin (lower value = more accuracy, 0 perfect value)
-collisionMargin = 0
+collision_margin = 0
 
 #linear_damping(amount of linear velicity particle is lost over time)
-linearDamping = 0.04
+linear_damping = 0.04
 #rotational_dampin
-angularDamping = 0.1
+angular_damping = 0.1
 
 seed = "DEFAULT" #(DEFAULT -> random)
 distribution = "UNIFORM" # UNIFORM, NORMAL, LOGNORMAL
 # Standard deviation. In case of UNIFORM, the maximum distance from mean
-scaleDeviation = 0
+scale_deviation = 0
