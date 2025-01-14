@@ -2,7 +2,7 @@
 
 from functions import runCommand
 
-fileList = ["mesh_stl.vtk", "results.foam", "log.*", "*.stl"]
+fileList = ["results.foam", "log.*", "*.stl", "system/*/topoSetDict"]
 dirList = ["constant", "VTK", "postProcessing"]
 
 for fileName in fileList:

@@ -43,6 +43,7 @@ done
 
 pointSets = [
     "multiRegionPoints",
+    "nearPoints",
     "nonManifoldPoints",
     "unusedPoints",
 ]
@@ -50,6 +51,7 @@ pointSets = [
 cellSets = [
     "concaveCells",
     "highAspectRatioCells",
+    "nonClosedCells",
     "oneInternalFaceCells",
     "twoInternalFacesCells",
     "underdeterminedCells",
@@ -62,26 +64,26 @@ faceSets = [
     "lowWeightFaces",
     "nonOrthoFaces",
     "skewFaces",
+    "wrongOrientedFaces",
     "zeroAreaFaces",
 ]
 
 edgeSets = ["shortEdges"]
 
-for region in ["fluid", "solid"]:
+for region in ["solid", "fluid"]:
     print("Running checkMesh on region " + region)
     runCommand(
-        "checkMesh -region "
+        "checkMesh -writeSets vtk -region "  # -writeSets does not work for all OF versions
         + region
         + " -allGeometry -allTopology > "
         + "log.checkMesh."
         + region
-        + ".txt"
     )
     print("Results: ")
     showMeshErrors(region)
     print()
 
-    print("Writing mesh validty errors for " + region + " to vtk.")
+    print("Writing mesh validity errors for " + region + " to vtk.")
     for typeSet in ["cellSet", "edgeSet", "faceSet", "pointSet"]:
         for checkSet in eval(typeSet + "s"):
             runCommand(
