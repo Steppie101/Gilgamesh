@@ -134,7 +134,7 @@ def Remeshing_Corners(mesh_file):
             lamb = 0.005,
             iterations = 30,
             implicit_time_integration = False,
-            volume_constraint = True,
+            volume_constraint = False, #was eerst True maar we vragen hem om een stukje weg te snijden dus het volume moet veranderen.
             laplacian_operator = None)
     
     file_date = date.today()
