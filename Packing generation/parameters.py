@@ -8,7 +8,7 @@
 #CUBE, UVSPHERE, ICOSPHERE, CYLINDER, STL
 particle_type = "CUBE"
 stl_import_path = "stl_files/ring.stl" #Path relative to the blender file
-stl_export_path = "stl_files/test.stl" #Path relative to the blender file
+stl_export_path = "stl_files/cubes.stl" #Path relative to the blender file
 spawn_interval = 20
 
 #SHAPE SPECIFIC PARAMETERS
@@ -29,7 +29,7 @@ ico_subdivisions = 2 #int
 x_size = 3
 y_size = 3
 z_size = "DEFAULT"
-number_of_particles = 10
+number_of_particles = 50
 extra_iterations = 150
 spawn_height = 25
 overlap_size = 0.01
