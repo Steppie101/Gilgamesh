@@ -28,22 +28,25 @@ def sanity_check():
         print(warning, "You are about to overwrite a file with your export. Export path is:\n", export_path)
         problem_found = True
 
-    if params.spawn_interval < 12:
-        raise Exception("Spawn interval too small")
+    min_interval = int(np.ceil(np.sqrt(2 * (1 + 3 * params.scale_deviation) * np.sqrt(3) / 9.81) * 24))
 
-    #Possibly add different exception for uniform distribution, with 1 + params.scaleDeveation
-    if params.x_size < 1 + 2 * params.scale_deviation or params.y_size < 1 + 2 * params.scale_deviation:
-        raise Exception("Wall size too small")
+    if params.spawn_interval < min_interval:
+        print(warning, "Spawn interval too small. Should be at least", min_interval)
 
-    if params.scale_deviation > 2:
-        raise Exception("Too large standard deviation")
+    if min(params.x_size, params.y_size) < (1 + 2 * params.scale_deviation) * np.sqrt(3):
+        print(warning, "Small wall size")
+        problem_found == True
+
+    if params.scale_deviation * np.sqrt(3) > 1 / 2:
+        print(warning, "Large standard deviation")
+        problem_found == True
     
     if params.number_of_particles > 100:
         print(warning, "Number of particles is", params.number_of_particles, "the program will take a long time.")
         problem_found == True
         
     if params.particle_type == "UVSPHERE" and (params.uv_segments > 200 or params.uv_rings > 100):
-        print(warning, "Number of faces in uvsphere is very large, the program will take a long time. \n Smaller values of uvSegments and/or uvRings is advised")
+        print(warning, "Number of faces in uvsphere is very large, the program will take a long time")
         problem_found == True
         
     if params.particle_type == "UVSPHERE" and 2 * params.uv_rings != params.uv_segments:
@@ -51,7 +54,7 @@ def sanity_check():
         problem_found == True
         
     if params.particle_type == "ICOSPHERE" and params.icoSubdivisions > 6:
-        print(warning, "Number of faces in icosphere is very large, the program will take a long time. \n A smaller value for icoSubdivisions is advised.")
+        print(warning, "Number of faces in icosphere is very large, the program will take a long time")
         problem_found == True
     
     if params.particle_type == "STL" and params.collision_shape in ["BOX", "SPHERE", "CYLINDER"]:
@@ -82,10 +85,7 @@ def sanity_check():
         else:
             print("Continueing")
 
-def is_int(x):
-    return not x % 1
-
-def random_location(rng, x_size, y_size):
+def random_location(rng, x_size, y_size, spawn_height):
     """Return a uniformly distributed location vector.
     
     The x and y coordinates are taken in their respective ranges x_size and y_size, centered at (0,0).
@@ -93,7 +93,7 @@ def random_location(rng, x_size, y_size):
     """
     x = rng.uniform(-x_size / 2, x_size / 2)
     y = rng.uniform(-y_size / 2, y_size / 2)
-    z = params.spawn_height
+    z = spawn_height
     return Vector((x, y, z))
 
 def random_rotation(rng):
@@ -103,41 +103,41 @@ def random_rotation(rng):
     gamma = rng.random() * 2 * np.pi
     return Euler((alpha, beta, gamma))
 
-def random_scale(rng, mean = 1, deviation = 0):
+def random_scale(rng, mean = 1, deviation = 0, distribution = "NORMAL"):
     """Return a normally distributed scale vector.
     
     mean and std represent the mean and standard deviation of the normal distribution respectively.
     """
     if deviation == 0:
-        return Vector((mean, mean, mean))
+        return mean
     
-    match params.distribution:
+    match distribution:
         case "UNIFORM":
-            size = rng.uniform(mean - deviation, mean + deviation)
+            size = rng.uniform(mean - np.sqrt(3) * deviation, mean + np.sqrt(3) * deviation)
         case "NORMAL":
             size = rng.normal(mean, deviation)
         case "LOGNORMAL":
             size = rng.lognormal(mean, deviation)
-    return Vector((size, size, size))
+    return size
 
-def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = Vector((1,1,1)), type = "ACTIVE", name = "None", rescaleFactor = 1):
+def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = 1, name = "None", rescale_factor = 1):
     match params.particle_type:
         case "CUBE":
             bpy.ops.mesh.primitive_cube_add()
         case "UVSPHERE":
-            bpy.ops.mesh.primitive_uv_sphere_add(segments = params.uv_segments, ring_count = params.uv_rings, radius = params.uv_radius)
+            bpy.ops.mesh.primitive_uv_sphere_add(segments = params.uv_segments, ring_count = params.uv_rings, radius = 1)
         case "ICOSPHERE":
-            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions = params.ico_subdivisions, radius = params.ico_radius)
+            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions = params.ico_subdivisions, radius = 1)
         case "CYLINDER":
-            depth = np.sqrt((params.cylinder_ratio ** 2)/(1 + params.cylinder_ratio ** 2))
-            radius = np.sqrt(1/(1 + params.cylinder_ratio ** 2))
+            depth = np.sqrt((4 * params.cylinder_ratio ** 2) / (1 + 4 * params.cylinder_ratio ** 2))
+            radius = np.sqrt(1 / (1 + 4 * params.cylinder_ratio ** 2))
             bpy.ops.mesh.primitive_cylinder_add(radius = radius, depth = depth)
         case "STL":
             import_path = os.path.join(file_path, params.stl_import_path)
             bpy.ops.wm.stl_import(filepath = import_path)
 
     obj = bpy.context.selected_objects[0]
-    obj.matrix_world = Matrix.LocRotScale(location, rotation, scale * rescaleFactor)
+    obj.matrix_world = Matrix.LocRotScale(location, rotation, max(min(scale * rescale_factor, (min(params.x_size , params.y_size) - 0.1) / np.sqrt(3)), 0.1) * Vector((1, 1, 1)))
     obj.name = name
 
     bpy.context.view_layer.objects.active = obj
@@ -145,7 +145,7 @@ def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), sca
     body = bpy.context.object.rigid_body
     body.collision_shape = params.collision_shape
     body.friction = params.friction
-    body.restitution = params.bouncyness
+    body.restitution = params.restitution
     body.mesh_source = "BASE"
     if params.collision_margin:
         body.use_margin = True
@@ -156,11 +156,15 @@ def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), sca
 def is_inside_boundary(s, size):
     return np.abs(s) < size / 2
 
-def delete_object(obj):
-    bpy.ops.object.select_all(action = "DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+def delete_object(name):
+    bpy.context.view_layer.objects.active = select_object(name)
     bpy.ops.object.delete()
+
+def select_object(name):
+    bpy.ops.object.select_all(action = "DESELECT")
+    obj = bpy.data.objects[name]
+    obj.select_set(True)
+    return obj
 
 def move_particles():
     bpy.ops.object.select_pattern(pattern = "Particle*.__", extend = False)
@@ -187,16 +191,14 @@ def move_particles():
             obj.matrix_world = Matrix.LocRotScale(location - Vector((np.sign(x) * params.x_size, np.sign(y) * params.y_size, 0)), rotation, scale)
 
     bpy.ops.rigidbody.objects_add()
-    copy = bpy.data.objects["Particle.000.__"]
-    copy.select_set(True)
-    bpy.context.view_layer.objects.active = copy
+    bpy.context.view_layer.objects.active = select_object("Particle.000.__")
     bpy.ops.rigidbody.object_settings_copy()
 
 def correct_names():
     bpy.ops.object.select_pattern(pattern = "Particle*.__", extend = False)
     for obj in bpy.context.selected_objects:    
                   
-        location, rotation, scale = obj.matrix_world.decompose()
+        location = obj.matrix_world.decompose()[0]
         x, y, z = location
         name = obj.name[:-3]
         xobj = bpy.data.objects[name + ".x_"]
@@ -237,35 +239,34 @@ def reorganize_periodicly():
     move_particles()
     correct_names()
 
-def intersect(obj1, obj2):
-    bpy.ops.object.select_all(action = "DESELECT")
+def intersect(name1, name2):
+    obj2 = select_object(name2)
+    obj1 = select_object(name1)
     bpy.context.view_layer.objects.active = obj1
     bpy.ops.object.modifier_add(type = "BOOLEAN")
-    obj1.modifiers["Boolean"].operation = 'INTERSECT'
+    obj1.modifiers["Boolean"].operation = "INTERSECT"
     obj1.modifiers["Boolean"].object = obj2
     obj1.modifiers["Boolean"].use_self = True
     bpy.ops.object.modifier_apply(modifier = "Boolean")
 
-def export_stl(obj):
-    bpy.ops.object.select_all(action = "DESELECT")
-    
-    obj.select_set(True)
+def export_stl(name):
+    obj = select_object(name)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.wm.stl_export(filepath = export_path, export_selected_objects = True)
 
+#Generate and set seed
 rng = np.random.default_rng()
-if params.seed == "DEFAULT":
+if params.seed == "RANDOM":
     seed = rng.integers(1 << 32)
 else: seed = params.seed
 rng = np.random.default_rng(seed)
 print("Used seed:", seed)
 
-particle_size = 1
-generate_particle()
-obj = bpy.context.selected_objects[0]
-rescale_factor = 1 / obj.dimensions.length
-delete_object(obj)
-
+#Determine rescale factor, for normalization and overlap
+generate_particle(name = "Test")
+obj = select_object("Test")
+rescale_factor = (1 - params.overlap_size)  / max(obj.dimensions)
+delete_object("Test")
 
 
 def main():
@@ -273,6 +274,7 @@ def main():
     bpy.ops.object.select_all(action = "SELECT")
     bpy.ops.object.delete(use_global = False)
 
+    #Add floor
     bpy.ops.mesh.primitive_plane_add(size = 2 * max(params.x_size, params.y_size) + 5)
     bpy.ops.rigidbody.object_add(type = "PASSIVE")
 
@@ -280,23 +282,25 @@ def main():
     bpy.context.scene.frame_end = max_iterations + params.extra_iterations
     bpy.context.scene.rigidbody_world.point_cache.frame_end = max_iterations + params.extra_iterations
 
+    #Spwan particles, and run simulation inbetween
     n = 0
     for i in range(max_iterations):
         if (i % params.spawn_interval == 0):
-            rand_loc = random_location(rng, params.x_size, params.y_size)
+            rand_loc = random_location(rng, params.x_size, params.y_size, params.spawn_height)
             rand_rot = random_rotation(rng)
-            rand_scale = random_scale(rng, deviation = params.scale_deviation)
-            generate_particle(rand_loc, rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".__", rescale_factor)
-            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, 0, 0)), rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".x_", rescale_factor)
-            generate_particle(rand_loc - Vector((0, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + "._y", rescale_factor)
-            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "ACTIVE", "Particle.{:03d}".format(n) + ".xy", rescale_factor)
+            rand_scale = random_scale(rng, deviation = params.scale_deviation, distribution = params.distribution)
+            generate_particle(rand_loc, rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".__", rescale_factor)
+            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, 0, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".x_", rescale_factor)
+            generate_particle(rand_loc - Vector((0, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + "._y", rescale_factor)
+            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".xy", rescale_factor)
             n += 1
-        if i:
+
             fraction = (i / max_iterations) ** 2 * max_iterations / (2 * params.extra_iterations + max_iterations)
             print("Generating geometry... " + str(round(fraction * 100)) + "%", end = "\r")
         reorganize_periodicly()
         bpy.context.scene.frame_set(frame = i)
 
+    #Extra simulation time, for settlement
     for i in range(max_iterations, max_iterations + params.extra_iterations):
         fraction = (2 * i / max_iterations - 1) * max_iterations / (2 * params.extra_iterations + max_iterations)
         print("Generating geometry... " + str(round(fraction * 100)) + "%", end = "\r")
@@ -306,16 +310,18 @@ def main():
     reorganize_periodicly()
     bpy.context.scene.frame_set(frame = 0)
 
-    plane = bpy.data.objects["Plane"]
-    delete_object(plane)
+    #Delete floor
+    delete_object("Plane")
 
+    #Scale particles to original size
     bpy.ops.object.select_all(action = 'SELECT')
     for obj in bpy.context.selected_objects:    
-        obj.scale += Vector((params.overlap_size, params.overlap_size, params.overlap_size))
+        obj.scale /= 1 - params.overlap_size
 
     print("Geometry generated          ")
     print("Cutting geometry...", end = "\r")
 
+    #Join mesh
     bpy.ops.object.select_all(action = 'SELECT')
     bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
     bpy.ops.object.join()
@@ -323,18 +329,15 @@ def main():
     set = bpy.context.selected_objects[0]
     set.name = "Set"
 
+    #Cut mesh
     bpy.ops.mesh.primitive_cube_add(size = 1, location = Vector((0, 0, params.spawn_height / 2)), scale = Vector((params.x_size, params.y_size, params.spawn_height + 1)))
-    cube = bpy.data.objects["Cube"]
-
-
-    intersect(set, cube)
-    delete_object(cube)
-
+    intersect("Set", "Cube")
+    delete_object("Cube")
     print("Geometry cut        ")
 
+    #Export mesh
     print("Exporting STL...", end = "\r")
-    export_stl(set)
-    print("STL exported    ")
+    export_stl("Set")
     
 
 if __name__ == "__main__":
