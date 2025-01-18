@@ -32,50 +32,51 @@ def sanity_check():
 
     if params.spawn_interval < min_interval:
         print(warning, "Spawn interval too small. Should be at least", min_interval)
+        problem_found = True
 
     if min(params.x_size, params.y_size) < (1 + 2 * params.scale_deviation) * np.sqrt(3):
         print(warning, "Small wall size")
-        problem_found == True
+        problem_found = True
 
     if params.scale_deviation * np.sqrt(3) > 1 / 2:
         print(warning, "Large standard deviation")
-        problem_found == True
+        problem_found = True
     
     if params.number_of_particles > 100:
         print(warning, "Number of particles is", params.number_of_particles, "the program will take a long time.")
-        problem_found == True
+        problem_found = True
         
     if params.particle_type == "UVSPHERE" and (params.uv_segments > 200 or params.uv_rings > 100):
         print(warning, "Number of faces in uvsphere is very large, the program will take a long time")
-        problem_found == True
+        problem_found = True
         
     if params.particle_type == "UVSPHERE" and 2 * params.uv_rings != params.uv_segments:
         print(warning, "Faces on uvsphere are not square, for square faces, uvSegments = 2 * uvRings")
-        problem_found == True
+        problem_found = True
         
     if params.particle_type == "ICOSPHERE" and params.icoSubdivisions > 6:
         print(warning, "Number of faces in icosphere is very large, the program will take a long time")
-        problem_found == True
+        problem_found = True
     
     if params.particle_type == "STL" and params.collision_shape in ["BOX", "SPHERE", "CYLINDER"]:
         print(warning, "Particle type is STL, while collision shape is", params.collision_shape)
-        problem_found == True
+        problem_found = True
     
     if params.particle_type == "CUBE" and params.collision_shape != "BOX":
         print(warning, "Particle type is BOX, while collision shape is", params.collision_shape)
-        problem_found == True
+        problem_found = True
                 
     if params.particle_type in ["UVSPHERE", "ICOSPHERE"] and params.collision_shape != "SPHERE":
         print(warning, "Particle type is", params.particle_type, ", while collision shape is", params.collision_shape)
-        problem_found == True
+        problem_found = True
 
     if params.particle_type == "CYLINDER" and params.collision_shape != "CYLINDER":
         print(warning, "Particle type is CYLINDER, while collision shape is", params.collision_shape)
-        problem_found == True
+        problem_found = True
     
     if params.collision_shape == "MESH" and params.collision_margin == 0:
         print(warning, "Mesh collisionshape is used with 0 collisionMargin.")
-        problem_found == True
+        problem_found = True
     
     if problem_found == True:
         user_input = input("Do you wish to continue? (Y/n) ")
