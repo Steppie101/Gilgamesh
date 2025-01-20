@@ -1,0 +1,53 @@
+    {
+        name sides;
+        type faceSet;
+        action new;
+        source faceToFace;
+        sourceInfo
+        {
+            sets (side1 side2 side3 side4);
+        }
+    }
+
+    {
+        name inlet;
+        type faceSet;
+        action new;
+        source faceToFace;
+        sourceInfo
+        {
+            set side5;
+        }
+    }
+
+    {
+        name outlet;
+        type faceSet;
+        action new;
+        source faceToFace;
+        sourceInfo
+        {
+            set side6;
+        }
+    }
+
+    {
+        name fluid_to_solid;
+        type faceSet;
+        action new;
+        source patchToFace;
+        sourceInfo
+        {
+            patch "defaultFaces";
+        }
+    }
+    {   
+        name        fluid_to_solid;
+        type        faceSet;
+        action      subtract;
+        source      faceToFace;
+	sourceInfo
+	{
+	    sets (sides inlet outlet);
+	}
+    }

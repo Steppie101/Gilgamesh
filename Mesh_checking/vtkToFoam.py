@@ -3,6 +3,7 @@
 from functions import runCommand, checkContinuing
 import os
 import re
+import meshio
 
 if os.path.isdir("constant"):
     checkContinuing(
@@ -10,7 +11,7 @@ if os.path.isdir("constant"):
     )
 
 
-def fillTopoSetDict(region, logfile):
+def fillTopoSetDictMeshRegions(region, logfile):
     """
     Reads a logfile to extract number of cells for each region. Updating topoSetDict to merge regions.
 
@@ -26,20 +27,22 @@ def fillTopoSetDict(region, logfile):
     nrSetsMerged : int
         Number of sets added to `topoSetDict`.
     """
-    topoSetDictpath = "system/" + region + "/topoSetDict"
+
     with open(logfile, "r") as file:
         content = file.read()
 
     pattern = r"Region\s+Cells\n+[-]+\s+[-]+\n((?:\d+\s+\d+\s*)+)"
     matches = re.search(pattern, content)
     if matches:
-        headers = ["Region", "Cells"]
         lst = [
             list(map(int, row.split()))
             for row in matches.group(1).strip().split("\n")
         ]
 
-        with open(topoSetDictpath, "a") as topoSetDict:
+        with open(eval(topoSetDictPath), "w") as topoSetDict:
+            with open(eval(topoSetDictHeaderPath), "r") as file:
+                topoSetDict.write(file.read())
+
             topoSetDict.write("actions (")
             nrSetsMerged = 0
             for lstLst in lst:
@@ -64,7 +67,7 @@ def fillTopoSetDict(region, logfile):
                 """
                 )
 
-                if nrFaces >= 1:
+                if nrFaces >= minFaces:
                     topoSetDict.write(topoSetDictRegion)
                     nrSetsMerged += 1
 
@@ -85,17 +88,17 @@ def removeSmallSets(region):
     -------
     None
     """
-    print("Removing small sets")
+    print("Removing small mesh regions")
     runCommand(
         "splitMeshRegions -makeCellZones -overwrite -region "
         + region
         + " >log.splitMeshRegions."
         + region
     )
-    runCommand(
-        "cp system/topoSetDictHeader system/" + region + "/topoSetDict", False
+
+    nrSetsMerged = fillTopoSetDictMeshRegions(
+        region, "log.splitMeshRegions." + region
     )
-    nrSetsMerged = fillTopoSetDict(region, "log.splitMeshRegions." + region)
     if nrSetsMerged >= 1:
         runCommand("topoSet -region " + region)
     else:
@@ -114,15 +117,206 @@ def removeSmallSets(region):
     )
 
 
+def topoSetDictSideBegin(sideNr):
+    """
+    Create for a side the beginning part of the topoSetDict.
+
+    Parameters
+    ----------
+    sideNr : int
+        The number of the side (1-6).
+
+    Returns
+    -------
+    str
+        The entry for topoSetDict (minus bounding box).
+
+    """
+    return (
+        """
+    {
+        name side"""
+        + str(sideNr)
+        + """;
+        type faceSet;
+        action new;
+        source patchToFace;
+        sourceInfo
+        {
+            patch "defaultFaces";
+        }
+    }
+    {
+        name        side"""
+        + str(sideNr)
+        + """;
+        type        faceSet;
+        action      subtract;
+        source      boxToFace;
+    """
+    )
+
+
+def createPatches(region):
+    """
+    Create boundary patches for the region region.
+
+    Parameters
+    ----------
+    region : str
+        Name of the region.
+
+    Returns
+    -------
+    None.
+
+    """
+    print("Creating patches")
+
+    mesh = meshio.read("mesh_solid.vtk")
+    points = (mesh.points).T
+    # points = points.T
+    xmax = max(points[0])
+    xmin = min(points[0])
+    ymax = max(points[1])
+    ymin = min(points[1])
+    zmax = max(points[2])
+    zmin = min(points[2])
+
+    boxes = [
+        # Box 1
+        "    box ("
+        + str(xmin + boxMarginSmall)
+        + " "
+        + str(ymin - boxMarginBig)
+        + " "
+        + str(zmin - boxMarginBig)
+        + ") ("
+        + str(xmax + boxMarginBig)
+        + " "
+        + str(ymax + boxMarginBig)
+        + " "
+        + str(zmax + boxMarginBig)
+        + ");",
+        #
+        # Box 2
+        "    box ("
+        + str(xmin - boxMarginBig)
+        + " "
+        + str(ymin - boxMarginBig)
+        + " "
+        + str(zmin - boxMarginBig)
+        + ") ("
+        + str(xmax - boxMarginSmall)
+        + " "
+        + str(ymax + boxMarginBig)
+        + " "
+        + str(zmax + boxMarginBig)
+        + ");",
+        #
+        # Box 3
+        "    box ("
+        + str(xmin - boxMarginBig)
+        + " "
+        + str(ymin + boxMarginSmall)
+        + " "
+        + str(zmin - boxMarginBig)
+        + ") ("
+        + str(xmax + boxMarginBig)
+        + " "
+        + str(ymax + boxMarginBig)
+        + " "
+        + str(zmax + boxMarginBig)
+        + ");",
+        #
+        # Box 4
+        "    box ("
+        + str(xmin - boxMarginBig)
+        + " "
+        + str(ymin - boxMarginBig)
+        + " "
+        + str(zmin - boxMarginBig)
+        + ") ("
+        + str(xmax + boxMarginBig)
+        + " "
+        + str(ymax - boxMarginSmall)
+        + " "
+        + str(zmax + boxMarginBig)
+        + ");",
+        #
+        # Box 5
+        "    box ("
+        + str(xmin - boxMarginBig)
+        + " "
+        + str(ymin - boxMarginBig)
+        + " "
+        + str(zmin + boxMarginSmall)
+        + ") ("
+        + str(xmax + boxMarginBig)
+        + " "
+        + str(ymax + boxMarginBig)
+        + " "
+        + str(zmax + boxMarginBig)
+        + ");",
+        #
+        # Box 6
+        "    box ("
+        + str(xmin - boxMarginBig)
+        + " "
+        + str(ymin - boxMarginBig)
+        + " "
+        + str(zmin - boxMarginBig)
+        + ") ("
+        + str(xmax + boxMarginBig)
+        + " "
+        + str(ymax + boxMarginBig)
+        + " "
+        + str(zmax - boxMarginSmall)
+        + ");",
+    ]
+
+    with open(eval(topoSetDictPath), "w") as topoSetDict:
+        with open(eval(topoSetDictHeaderPath), "r") as file:
+            topoSetDict.write(file.read())
+
+        topoSetDict.write("actions \n(")
+        for sideNr in range(0, 6):
+            topoSetDict.write(topoSetDictSideBegin(sideNr + 1))
+            topoSetDict.write(boxes[sideNr])
+            topoSetDict.write("\n    }\n")
+        topoSetDict.write("\n")
+
+        with open(eval(topoSetDictPatchesPath), "r") as file:
+            topoSetDict.write(file.read())
+
+        topoSetDict.write("\n);")
+
+    print("topoSetDict written")
+    runCommand("topoSet -region " + region)
+    runCommand("createPatch -overwrite -region " + region)
+
+
+# topoSetDict files
+topoSetDictPath = '"system/" + region + "/topoSetDict"'
+topoSetDictHeaderPath = '"system/" + region + "/topoSetDictHeader"'
+topoSetDictPatchesPath = '"system/" + region + "/topoSetDictPatches"'
+
+# Properties
+boxMarginSmall = 0.01
+boxMarginBig = 10
+minFaces = 10
+
 print()
 runCommand("mkdir constant", False)
 runCommand("touch results.foam", False)
 
-for region in ["fluid"]:
+for region in ["fluid", "solid"]:
     print("Importing .vtk of region " + region + " to foam")
+    runCommand("sed -i 's/vtktypeint64/int/g' mesh_" + region + ".vtk")
     runCommand("vtkUnstructuredToFoam mesh_" + region + ".vtk")
     runCommand("mkdir constant/" + region, False)
     runCommand("mv constant/polyMesh constant/" + region, False)
     removeSmallSets(region)
+    createPatches(region)
 print()
 print("Done!")

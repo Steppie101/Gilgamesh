@@ -10,139 +10,44 @@ FoamFile
     version         2;
     format          ascii;
     class           dictionary;
-    object          fvSolution;
+    object          fvSchemes;
 }
 
-solvers
+ddtSchemes
 {
-    R2NH
-    {
-        solver          BiCGStab;
-        preconditioner
-        {
-            preconditioner  DILU;
-        }
-        tolerance       1e-06;
-        relTol          0;
-    }
-    R2NH2p
-    {
-        solver          BiCGStab;
-        preconditioner
-        {
-            preconditioner  DILU;
-        }
-        tolerance       1e-06;
-        relTol          0;
-    }
-    R2NHCO2m
-    {
-        solver          BiCGStab;
-        preconditioner
-        {
-            preconditioner  DILU;
-        }
-        tolerance       1e-06;
-        relTol          0;
-    }
-    HCO3m
-    {
-        solver          BiCGStab;
-        preconditioner
-        {
-            preconditioner  DILU;
-        }
-        tolerance       1e-06;
-        relTol          0;
-    }
-    heatSource
-    {
-        solver          BiCGStab;
-        preconditioner
-        {
-            preconditioner  DILU;
-        }
-        tolerance       1e-06;
-        relTol          0;
-    }
-    CO2
-    {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0;
-        smoother        GaussSeidel;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
-        minIter         2;
-        maxIter         50;
-    }
-    H2O
-    {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0;
-        smoother        GaussSeidel;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
-        minIter         2;
-        maxIter         50;
-    }
-    T
-    {
-        solver          BiCGStab;
-        preconditioner
-        {
-            preconditioner  DILU;
-        }
-        tolerance       1e-06;
-        relTol          0;
-    }
+    default         backward;
 }
 
-SIMPLE
+gradSchemes
 {
-    nNonOrthogonalCorrectors 3;
-    residualControl
-    {
-        T               1e-06;
-        CO2             1e-06;
-        H2O             1e-06;
-    }
+    default         leastSquares;
 }
 
-PISO
+divSchemes
 {
-    pRefPoint       ( 0 0 0 );
-    pRefValue       0;
+    default         none;
 }
 
-PIMPLE
+laplacianSchemes
 {
-    nCorrectors     2;
-    nNonOrthogonalCorrectors 1;
-    residualControl
-    {
-        p
-        {
-            relTol          0;
-            tolerance       0;
-        }
-        U
-        {
-            relTol          0;
-            tolerance       0;
-        }
-    }
+    default         Gauss linear corrected;
 }
 
-relaxationFactors
+interpolationSchemes
 {
-    T               1;
-    CO2             1;
-    H2O             1;
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         corrected;
+}
+
+fluxRequired
+{
+    default         no;
+    T               ;
+    CO2             ;
+    H2O             ;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

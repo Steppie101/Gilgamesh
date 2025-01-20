@@ -70,7 +70,7 @@ faceSets = [
 
 edgeSets = ["shortEdges"]
 
-for region in ["solid", "fluid"]:
+for region in ["fluid", "solid"]:
     print("Running checkMesh on region " + region)
     runCommand(
         "checkMesh -writeSets vtk -region "  # -writeSets does not work for all OF versions
@@ -83,18 +83,18 @@ for region in ["solid", "fluid"]:
     showMeshErrors(region)
     print()
 
-    print("Writing mesh validity errors for " + region + " to vtk.")
-    for typeSet in ["cellSet", "edgeSet", "faceSet", "pointSet"]:
-        for checkSet in eval(typeSet + "s"):
-            runCommand(
-                "foamToVTK -region "
-                + region
-                + " -"
-                + typeSet
-                + " "
-                + checkSet,
-                False,
-            )
-    print()
+    # print("Writing mesh validity errors for " + region + " to vtk.")
+    # for typeSet in ["cellSet", "edgeSet", "faceSet", "pointSet"]:
+    #     for checkSet in eval(typeSet + "s"):
+    #         runCommand(
+    #             "foamToVTK -region "
+    #             + region
+    #             + " -"
+    #             + typeSet
+    #             + " "
+    #             + checkSet,
+    #             False,
+    #         )
+    # print()
 
 print("Done!")
