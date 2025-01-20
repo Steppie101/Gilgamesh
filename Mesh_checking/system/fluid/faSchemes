@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2306                                  |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.1                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -10,23 +10,25 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    object      fvSchemes;
+    location    "system";
+    object      faSchemes;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 ddtSchemes
 {
-    default	    backward;
+    default         bdf2;
 }
 
 gradSchemes
 {
-    default         leastSquares;
+    default         Gauss linear; // Grad: Us, surfaceTension
+//    grad(testAF)    leastSquares;
 }
 
 divSchemes
 {
-    default         none;
+    default         Gauss linear;
 }
 
 laplacianSchemes
@@ -36,20 +38,12 @@ laplacianSchemes
 
 interpolationSchemes
 {
-    default         linear;
+    default         linear; // Interpolate: Us
 }
 
 snGradSchemes
 {
-    default         corrected;
-}
-
-fluxRequired
-{
-    default         no;
-    T;
-    CO2;
-    H2O;
+    default         none;
 }
 
 // ************************************************************************* //

@@ -5,11 +5,6 @@ import os
 import re
 import meshio
 
-if os.path.isdir("constant"):
-    checkContinuing(
-        "The directory 'constant' exists. Do you want to continue? "
-    )
-
 
 def fillTopoSetDictMeshRegions(region, logfile):
     """
@@ -27,7 +22,6 @@ def fillTopoSetDictMeshRegions(region, logfile):
     nrSetsMerged : int
         Number of sets added to `topoSetDict`.
     """
-
     with open(logfile, "r") as file:
         content = file.read()
 
@@ -107,11 +101,14 @@ def removeSmallSets(region):
     runCommand(
         "rm constant/"
         + region
-        + "/cellToRegion constant/"
+        + "/cellToRegion "
+        + "constant/"
+        + +region
+        + "/polyMesh/cellZones "
+        + "constant/"
         + region
-        + "/polyMesh/cellZones constant/"
-        + region
-        + "/polyMesh/sets/combinedCells 0/"
+        + "/polyMesh/sets/combinedCells "
+        + "0/"
         + region
         + "/cellToRegion"
     )
@@ -306,15 +303,19 @@ boxMarginSmall = 0.01
 boxMarginBig = 10
 minFaces = 10
 
+
+if os.path.isdir("constant/solid/polyMesh"):
+    checkContinuing(
+        "The directory 'constant/solid/polyMesh' exists. Do you want to continue? "
+    )
+
 print()
-runCommand("mkdir constant", False)
 runCommand("touch results.foam", False)
 
 for region in ["fluid", "solid"]:
     print("Importing .vtk of region " + region + " to foam")
     runCommand("sed -i 's/vtktypeint64/int/g' mesh_" + region + ".vtk")
     runCommand("vtkUnstructuredToFoam mesh_" + region + ".vtk")
-    runCommand("mkdir constant/" + region, False)
     runCommand("mv constant/polyMesh constant/" + region, False)
     removeSmallSets(region)
     createPatches(region)

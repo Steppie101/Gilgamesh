@@ -7,174 +7,209 @@
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
-    version         2;
-    format          ascii;
-    class           dictionary;
-    object          fvSolution;
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
 }
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 solvers
 {
+    
     CO2
     {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0;
-        smoother        GaussSeidel;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
-        minIter         2;
-        maxIter         50;
-    }
+        solver              GAMG;
+        tolerance           1e-6;
+        relTol              0;
+        smoother            GaussSeidel;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   1000;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
+        minIter         	2;
+        maxIter         	50;
+    };
     H2O
     {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0;
-        smoother        GaussSeidel;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
-        minIter         2;
-        maxIter         50;
-    }
+        solver              GAMG;
+        tolerance           1e-6;
+        relTol              0;
+        smoother            GaussSeidel;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   1000;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
+        minIter         	2;
+        maxIter         	50;
+    };
+       
+
     T
     {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0;
-        smoother        GaussSeidel;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
-        minIter         2;
-        maxIter         50;
-    }
+        solver              GAMG;
+        tolerance           1e-6;
+        relTol              0;
+        smoother            GaussSeidel;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   1000;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
+        minIter         	2;
+        maxIter         	50;
+    };
+        /* 
+        solver              GAMG;
+        tolerance           1e-7;
+        relTol              0;
+        smoother            GaussSeidel;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   10;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
+        minIter         	2;
+        maxIter         	50;
+        */
+
     Tcoupled
     {
-        solver          BiCGStab;
-        preconditioner
-        {
+        solver           BiCGStab;
+        
+        preconditioner      
+        {                   
             preconditioner  DILU;
         }
-        tolerance       1e-06;
-        relTol          0;
-        minIter         0;
-        maxIter         200;
-    }
-    U
-    {
-        solver          smoothSolver;
-        smoother        symGaussSeidel;
-        tolerance       1e-06;
-        relTol          0.01;
-    }
-    UFinal
-    {
-        solver          smoothSolver;
-        smoother        symGaussSeidel;
-        tolerance       1e-08;
-        relTol          0;
-    }
+
+        tolerance        1e-6;
+        relTol           0;
+
+        minIter          0;
+        maxIter          200;
+    };
+	
+	
+	U
+	{
+	solver smoothSolver;
+	smoother symGaussSeidel;
+	tolerance 1e-6;
+	relTol 0.01;
+	}
+	
+	UFinal
+	{
+	solver smoothSolver;
+	smoother symGaussSeidel;
+	tolerance 1e-8;
+	relTol 0;
+	}
+	
     p
     {
-        solver          GAMG;
-        tolerance       0.0001;
-        relTol          0.01;
-        smoother        DICGaussSeidel;
-        nPreSweeps      0;
-        nPostSweeps     2;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
+        solver              GAMG;
+        tolerance           1e-4;
+        relTol              0.01;
+        smoother            DICGaussSeidel;
+        nPreSweeps	     	0;
+        nPostSweeps		2;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   1000;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
     }
+    
     pcorr
     {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0.0001;
-        smoother        DICGaussSeidel;
-        nPreSweeps      0;
-        nPostSweeps     2;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
+        solver              GAMG;
+        tolerance           1e-6;
+        relTol              0.0001;
+        smoother            DICGaussSeidel;
+        nPreSweeps	     	0;
+        nPostSweeps		2;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   1000;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
     }
-    pcorrMesh
-    {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0.0001;
-        smoother        DICGaussSeidel;
-        nPreSweeps      0;
-        nPostSweeps     2;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
-    }
+
+	pcorrMesh
+	{
+        solver              GAMG;
+        tolerance           1e-6;
+        relTol              0.0001;
+        smoother            DICGaussSeidel;
+        nPreSweeps	     	0;
+        nPostSweeps		2;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   1000;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
+        } 
+
     pFinal
     {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0;
-        smoother        DICGaussSeidel;
-        nPreSweeps      0;
-        nPostSweeps     2;
-        cacheAgglomeration true;
-        nCellsInCoarsestLevel 1000;
-        agglomerator    faceAreaPair;
-        mergeLevels     1;
+        solver              GAMG;
+        tolerance           1e-6;
+        relTol              0;
+        smoother            DICGaussSeidel;
+        nPreSweeps	     	0;
+        nPostSweeps		2;
+        cacheAgglomeration  true;
+        nCellsInCoarsestLevel   1000;
+        agglomerator    	faceAreaPair;
+        mergeLevels     	1;
     }
 }
 
 SIMPLE
 {
     nNonOrthogonalCorrectors 1;
+
     residualControl
     {
-        T               1e-06;
+        T               1e-6;
     }
 }
 
 PISO
 {
-    pRefPoint       ( 0 0 0 );
-    pRefValue       0;
+    pRefPoint (0 0 0); 
+    pRefValue 0;
 }
 
 PIMPLE
 {
-    nOuterCorrectors 3;
-    nCorrectors     2;
-    nNonOrthogonalCorrectors 1;
+    // p-U coupling
+    nOuterCorrectors            3; // SIMPLEC loops
+    nCorrectors                 2; // PISO loops
+    nNonOrthogonalCorrectors    1;
+
     residualControl
     {
         p
         {
-            relTol          0;
-            tolerance       1e-06;
+            relTol         0;
+            tolerance      1e-6;
         }
+
         U
         {
-            relTol          0;
-            tolerance       1e-06;
+            relTol         0;
+            tolerance      1e-6;
         }
     }
 }
 
 relaxationFactors
 {
-    T               0.9;
-    p               0.5;
-    U               0.5;
-    CO2             0.9;
-    H2O             0.9;
+	T	0.9;
+	p	0.5;
+	U	0.5;
+	CO2	0.9;
+	H2O	0.9;
+
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+
+// ************************************************************************* //

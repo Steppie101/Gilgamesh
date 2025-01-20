@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2306                                  |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|  \\    /   O peration     | Version:  1.5                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -10,46 +10,45 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    object      fvSchemes;
+    object      regionInterfaceProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-ddtSchemes
-{
-    default	    backward;
-}
+partitionedCoupledPatches
+(
+    fluidsolid
+    {
+        interfaceType defaultInterface;
 
-gradSchemes
-{
-    default         leastSquares;
-}
+        coupledPatchPair
+        (
+            (fluid fluid_to_solid)
+            (solid solid_to_fluid)
+        );
 
-divSchemes
-{
-    default         none;
-}
+        coupledFields
+        (
+	    //T
+	    //CO2
+	    //H2O
+        );
+    }
+);
 
-laplacianSchemes
-{
-    default         Gauss linear corrected;
-}
+monolithicCoupledPatches
+(
+);
 
-interpolationSchemes
-{
-    default         linear;
-}
+curvatureCorrectedSurfacePatches 0();
 
-snGradSchemes
-{
-    default         corrected;
-}
+interpolatorUpdateFrequency 1;
 
-fluxRequired
-{
-    default         no;
-    T;
-    CO2;
-    H2O;
-}
+interfaceTransferMethod GGI;
+
+directMapCoeffs
+{}
+
+GGICoeffs
+{}
 
 // ************************************************************************* //
