@@ -1,4 +1,7 @@
-from functions import runCommand
+from functions import runCommand, runFoamCommand, checkFoamVersion
+
+# Written for Foam Extend v4.1
+checkFoamVersion("4.1")
 
 # Partitioned
 runCommand("cp 0/fluid/orig/* 0/fluid/", False)
@@ -9,8 +12,12 @@ runCommand(
     "cp constant/regionInterfacePropertiesPartitioned constant/regionInterfaceProperties"
 )
 
-runCommand("makeFaMesh -region fluid > log.makeFaMesh.fluid")
-runCommand("makeFaMesh -region solid > log.makeFaMesh.solid")
+for region in ["fluid", "solid"]:
+    runFoamCommand("makeFaMesh", region=region)
+
 
 # Serial
-runCommand("multiRegionFoam > log.multiRegionFoam")
+runFoamCommand("multiRegionFoam")
+
+print()
+print("Done!")

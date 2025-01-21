@@ -4,7 +4,10 @@ Check the validaty of the fluid and solid mesh using OpenFOAM's checkMesh.
 Writing sets with mesh errors to .vtk.
 """
 
-from functions import runCommand
+from functions import runCommand, runFoamCommand, checkFoamVersion
+
+# Written for OpenFOAM v2306
+checkFoamVersion("v2306")
 
 
 def showMeshErrors(region):
@@ -71,15 +74,13 @@ faceSets = [
 edgeSets = ["shortEdges"]
 
 for region in ["fluid", "solid"]:
-    print("Running checkMesh on region " + region)
-    runCommand(
-        "checkMesh -writeSets vtk -region "  # -writeSets does not work for all OF versions
-        + region
-        + " -allGeometry -allTopology > "
-        + "log.checkMesh."
-        + region
+    # -writeSets does not work for all OF versions
+    runFoamCommand(
+        "checkMesh", "-writeSets vtk -allGeometry -allTopology", region
     )
-    print("Results: ")
+    runCommand("mkdir postProcessing/" + region, False)
+    runCommand("mv postProcessing/constant postProcessing/" + region, False)
+    print("\nResults: ")
     showMeshErrors(region)
     print()
 

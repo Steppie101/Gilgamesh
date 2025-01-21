@@ -1,9 +1,17 @@
 """Convert .vtk mesh of fluid and solid to OpenFOAM. Removes small datasets and unusedPoints."""
 
-from functions import runCommand, checkContinuing
+from functions import (
+    runCommand,
+    checkContinuing,
+    runFoamCommand,
+    checkFoamVersion,
+)
 import os
 import re
 import meshio
+
+# Written for OpenFOAM v2306
+checkFoamVersion("v2306")
 
 
 def fillTopoSetDictMeshRegions(region, logfile):
@@ -82,35 +90,33 @@ def removeSmallSets(region):
     -------
     None
     """
-    print("Removing small mesh regions")
-    runCommand(
-        "splitMeshRegions -makeCellZones -overwrite -region "
-        + region
-        + " >log.splitMeshRegions."
-        + region
-    )
+
+    runFoamCommand("splitMeshRegions", "-makeCellZones -overwrite", region)
 
     nrSetsMerged = fillTopoSetDictMeshRegions(
         region, "log.splitMeshRegions." + region
     )
     if nrSetsMerged >= 1:
-        runCommand("topoSet -region " + region)
+        runFoamCommand("topoSet", region=region, addToLogFilename="1")
+
     else:
         checkContinuing("There are not any sets found. Continuing? ")
-    runCommand("subsetMesh combinedCells -overwrite -region " + region)
+    runFoamCommand("subsetMesh", "combinedCells -overwrite", region)
+
     runCommand(
         "rm constant/"
         + region
         + "/cellToRegion "
         + "constant/"
-        + +region
+        + region
         + "/polyMesh/cellZones "
         + "constant/"
         + region
         + "/polyMesh/sets/combinedCells "
         + "0/"
         + region
-        + "/cellToRegion"
+        + "/cellToRegion",
+        showWarnings=False,
     )
 
 
@@ -168,11 +174,9 @@ def createPatches(region):
     None.
 
     """
-    print("Creating patches")
-
-    mesh = meshio.read("mesh_solid.vtk")
+    mesh = meshio.read(eval(meshFileName))
     points = (mesh.points).T
-    # points = points.T
+
     xmax = max(points[0])
     xmin = min(points[0])
     ymax = max(points[1])
@@ -288,15 +292,15 @@ def createPatches(region):
 
         topoSetDict.write("\n);")
 
-    print("topoSetDict written")
-    runCommand("topoSet -region " + region)
-    runCommand("createPatch -overwrite -region " + region)
+    runFoamCommand("topoSet", region=region, addToLogFilename="2")
+    runFoamCommand("createPatch", "-overwrite", region)
 
 
-# topoSetDict files
+# File names
 topoSetDictPath = '"system/" + region + "/topoSetDict"'
 topoSetDictHeaderPath = '"system/" + region + "/topoSetDictHeader"'
 topoSetDictPatchesPath = '"system/" + region + "/topoSetDictPatches"'
+meshFileName = '"mesh_" + region + ".vtk"'
 
 # Properties
 boxMarginSmall = 0.01
@@ -309,15 +313,14 @@ if os.path.isdir("constant/solid/polyMesh"):
         "The directory 'constant/solid/polyMesh' exists. Do you want to continue? "
     )
 
-print()
 runCommand("touch results.foam", False)
 
 for region in ["fluid", "solid"]:
-    print("Importing .vtk of region " + region + " to foam")
-    runCommand("sed -i 's/vtktypeint64/int/g' mesh_" + region + ".vtk")
-    runCommand("vtkUnstructuredToFoam mesh_" + region + ".vtk")
+    runCommand("sed -i 's/vtktypeint64/int/g' " + eval(meshFileName))
+    runFoamCommand("vtkUnstructuredToFoam", eval(meshFileName), region, True)
     runCommand("mv constant/polyMesh constant/" + region, False)
     removeSmallSets(region)
     createPatches(region)
-print()
+    print()
+
 print("Done!")
