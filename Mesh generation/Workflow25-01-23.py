@@ -144,7 +144,7 @@ def Box_Mesh(mesh_file):
 
     cube = trimesh.creation.box(extents = (xlength/factor, ylength/factor, zlength/factor))
     
-    #cube.apply_translation((0,0, zlength/2))
+    cube.apply_translation((0,0, zlength/2))
     return cube
 
 
