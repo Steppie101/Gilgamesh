@@ -8,7 +8,6 @@ stl_import_path = "stl_files/ring.stl"
 # Export path relative to the blender file
 stl_export_path = "stl_files/test.stl"
 
-
 # <[Global Geometry Parameters]>
 # Wall sizes measured in units of the largest xyz-dimension of the particle type 
 # e.g. CUBE: side length, SPHERE: diameter, CYLINDER: max(depth, diameter), etc
@@ -37,7 +36,7 @@ ico_subdivisions = 2 #int
 
 # <[Physics Parameters]>
 # Frames between particle spawns, at 24 frames per second
-spawn_interval = 48
+spawn_interval = 20
 # Extra frames for the settlement of the particles
 extra_iterations = 150
 # Collision margin (BOX, SPHERE, CYLINDER, CONVEX_HULL, MESH) (a collision margin is recommended when using MESH)
@@ -59,4 +58,4 @@ seed = "RANDOM"
 # Distribution for particle size ( UNIFORM, NORMAL, LOGNORMAL )
 distribution = "NORMAL"
 # Standard deviation for particle scale, 
-scale_deviation = 1
+scale_deviation = 0

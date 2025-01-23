@@ -126,9 +126,9 @@ def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), sca
         case "CUBE":
             bpy.ops.mesh.primitive_cube_add()
         case "UVSPHERE":
-            bpy.ops.mesh.primitive_uv_sphere_add(segments = params.uv_segments, ring_count = params.uv_rings, radius = 1)
+            bpy.ops.mesh.primitive_uv_sphere_add(segments = params.uv_segments, ring_count = params.uv_rings, radius = 0.5)
         case "ICOSPHERE":
-            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions = params.ico_subdivisions, radius = 1)
+            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions = params.ico_subdivisions, radius = 0.5)
         case "CYLINDER":
             depth = np.sqrt((4 * params.cylinder_ratio ** 2) / (1 + 4 * params.cylinder_ratio ** 2))
             radius = np.sqrt(1 / (1 + 4 * params.cylinder_ratio ** 2))
@@ -335,6 +335,11 @@ def main():
     intersect("Set", "Cube")
     delete_object("Cube")
     print("Geometry cut        ")
+    
+    #Scale back for remeshing
+    set = select_object("Set")
+    bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
+    set.scale /= np.sqrt(3)
 
     #Export mesh
     print("Exporting STL...", end = "\r")
