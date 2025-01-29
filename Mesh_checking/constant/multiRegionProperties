@@ -11,15 +11,13 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      coupledSolution;
+    object      multiRegionProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-// rhoPimpleFluid zonder transportTemperature
 
 regions
 (
     (fluid (icoFluid transportTemperature) )
-    //(fluid (rhoPimpleFluid) )
     (solid (conductTemperature) )
 );
 

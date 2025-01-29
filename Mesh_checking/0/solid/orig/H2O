@@ -35,6 +35,10 @@ boundaryField
         nonOrthCorr             true;
         value                   $internalField;
     }
+    sides
+    {
+        type            zeroGradient;
+    }
 }
 
 
