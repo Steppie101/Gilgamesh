@@ -11,7 +11,7 @@ fileList = [
     "constant/*/faMesh/faceLabels",
     "constant/regionInterfaceProperties",
 ]
-dirList = ["constant/*/polyMesh", "VTK", "postProcessing"]
+dirList = ["constant/*/polyMesh", "VTK", "postProcessing", "0.*", "[1-9]*"]
 
 for fileName in fileList:
     runCommand("rm " + fileName, False)

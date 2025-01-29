@@ -47,6 +47,7 @@ def fillTopoSetDictMeshRegions(region, logfile):
 
             topoSetDict.write("actions (")
             nrSetsMerged = 0
+            totalSets = 0
             for lstLst in lst:
                 regionId = lstLst[0]
                 nrFaces = lstLst[1]
@@ -72,9 +73,9 @@ def fillTopoSetDictMeshRegions(region, logfile):
                 if nrFaces >= minFaces:
                     topoSetDict.write(topoSetDictRegion)
                     nrSetsMerged += 1
-
+                totalSets += 1
             topoSetDict.write("\n);")
-    return nrSetsMerged
+    return [totalSets, nrSetsMerged]
 
 
 def removeSmallSets(region):
@@ -93,15 +94,16 @@ def removeSmallSets(region):
 
     runFoamCommand("splitMeshRegions", "-makeCellZones -overwrite", region)
 
-    nrSetsMerged = fillTopoSetDictMeshRegions(
+    totalSets, nrSetsMerged = fillTopoSetDictMeshRegions(
         region, "log.splitMeshRegions." + region
     )
-    if nrSetsMerged >= 1:
-        runFoamCommand("topoSet", region=region, addToLogFilename="1")
+    if totalSets > 1:
+        if nrSetsMerged >= 1:
+            runFoamCommand("topoSet", region=region, addToLogFilename="1")
 
-    else:
-        checkContinuing("There are not any sets found. Continuing? ")
-    runFoamCommand("subsetMesh", "combinedCells -overwrite", region)
+        else:
+            checkContinuing("There are not any sets found. Continuing? ")
+        runFoamCommand("subsetMesh", "combinedCells -overwrite", region)
 
     runCommand(
         "rm constant/"
@@ -174,7 +176,7 @@ def createPatches(region):
     None.
 
     """
-    mesh = meshio.read(eval(meshFileName))
+    mesh = meshio.read(meshFileNameFluid)
     points = (mesh.points).T
 
     xmax = max(points[0])
@@ -301,17 +303,17 @@ topoSetDictPath = '"system/" + region + "/topoSetDict"'
 topoSetDictHeaderPath = '"system/" + region + "/topoSetDictHeader"'
 topoSetDictPatchesPath = '"system/" + region + "/topoSetDictPatches"'
 meshFileName = '"mesh_" + region + ".vtk"'
-
+meshFileNameFluid = "mesh_fluid.vtk"
 # Properties
 boxMarginSmall = 0.01
 boxMarginBig = 10
-minFaces = 10
+minFaces = 3
 
 
-if os.path.isdir("constant/solid/polyMesh"):
-    checkContinuing(
-        "The directory 'constant/solid/polyMesh' exists. Do you want to continue? "
-    )
+# if os.path.isdir("constant/solid/polyMesh"):
+#     checkContinuing(
+#         "The directory 'constant/solid/polyMesh' exists. Do you want to continue? "
+#     )
 
 runCommand("touch results.foam", False)
 
