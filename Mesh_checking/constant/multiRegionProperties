@@ -1,0 +1,72 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.1                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      multiRegionProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+regions
+(
+    (fluid (icoFluid transportTemperature) )
+    (solid (conductTemperature) )
+);
+
+
+partitionedCoupling
+{
+    maxCoupleIter 6;
+}
+
+DNA
+{
+   
+    T
+    {
+        maxCoupleIter 20;
+
+        residualControl
+        {
+            maxJumpRes 1e-07;
+            outputJumpResField no;
+            maxFluxRes 1e-07;
+	    //outputFluxResField yes;
+            outputFluxResField no;
+        }
+    } 
+    CO2
+    {
+        maxCoupleIter 20;
+
+        residualControl
+        {
+            maxJumpRes 1e-06;
+            outputJumpResField no;
+            maxFluxRes 1e-06;
+            outputFluxResField yes;
+        }
+    }
+     H2O
+     {
+         maxCoupleIter 20;
+
+         residualControl
+         {
+             maxJumpRes 1e-06;
+             outputJumpResField no;
+             maxFluxRes 1e-06;
+             outputFluxResField yes;
+         }
+     }
+}
+
+// ************************************************************************* //

@@ -1,0 +1,32 @@
+    {
+        name sides;
+        type faceSet;
+        action new;
+        source faceToFace;
+        sourceInfo
+        {
+            sets (side1 side2 side3 side4 side5 side6);
+
+        }
+    }
+
+    {
+        name solid_to_fluid;
+        type faceSet;
+        action new;
+        source patchToFace;
+        sourceInfo
+        {
+            patch "defaultFaces";
+        }
+    }
+    {   
+        name        solid_to_fluid;
+        type        faceSet;
+        action      subtract;
+        source      faceToFace;
+	sourceInfo
+	{
+	    set sides;
+	}
+    }

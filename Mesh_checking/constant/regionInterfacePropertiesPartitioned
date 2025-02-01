@@ -1,0 +1,55 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.1                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      regionInterfaceProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+partitionedCoupledPatches
+(
+    fluidsolid
+    {
+        interfaceType defaultInterface;
+
+        coupledPatchPair
+        (
+            (fluid fluid_to_solid)
+            (solid solid_to_fluid)
+        );
+
+        coupledFields
+        (
+	    //T
+	    //CO2
+	    //H2O
+        );
+    }
+);
+
+monolithicCoupledPatches
+(
+);
+
+curvatureCorrectedSurfacePatches 0();
+
+interpolatorUpdateFrequency 1;
+
+interfaceTransferMethod GGI;
+
+directMapCoeffs
+{}
+
+GGICoeffs
+{}
+
+// ************************************************************************* //
