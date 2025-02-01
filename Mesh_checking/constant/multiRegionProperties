@@ -39,7 +39,8 @@ DNA
             maxJumpRes 1e-07;
             outputJumpResField no;
             maxFluxRes 1e-07;
-            outputFluxResField yes;
+	    //outputFluxResField yes;
+            outputFluxResField no;
         }
     } 
     CO2

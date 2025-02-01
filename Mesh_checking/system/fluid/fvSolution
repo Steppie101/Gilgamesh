@@ -150,7 +150,7 @@ solvers
     pFinal
     {
         solver              GAMG;
-        tolerance           1e-6;
+        tolerance           1e-4;
         relTol              0;
         smoother            DICGaussSeidel;
         nPreSweeps	     	0;
