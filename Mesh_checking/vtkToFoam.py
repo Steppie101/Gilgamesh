@@ -302,18 +302,12 @@ def createPatches(region):
 topoSetDictPath = '"system/" + region + "/topoSetDict"'
 topoSetDictHeaderPath = '"system/" + region + "/topoSetDictHeader"'
 topoSetDictPatchesPath = '"system/" + region + "/topoSetDictPatches"'
-meshFileName = '"mesh_" + region + ".vtk"'
-meshFileNameFluid = "mesh_fluid.vtk"
+meshFileName = '"mesh" + region.capitalize() + ".vtk"'
+meshFileNameFluid = "meshFluid.vtk"
 # Properties
 boxMarginSmall = 0.01
 boxMarginBig = 10
 minFaces = 3
-
-
-# if os.path.isdir("constant/solid/polyMesh"):
-#     checkContinuing(
-#         "The directory 'constant/solid/polyMesh' exists. Do you want to continue? "
-#     )
 
 runCommand("touch results.foam", False)
 

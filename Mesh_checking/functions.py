@@ -50,6 +50,7 @@ def runFoamCommand(
     region="",
     regionOnlyLogFile=False,
     addToLogFilename="",
+    beforeCommand="",
 ):
     """
     Executes an OpenFOAM command, optionally for a specific region, and logs the output to a file.
@@ -66,6 +67,8 @@ def runFoamCommand(
         Whether the region-specific log file should be used without adding region to command. Default is False.
     addToLogFilename : str, optional
         Additional string to append to the log filename. Default is "".
+    beforeCommand: str, optional
+        Additional command before foamCommand. Default is "".
 
     Returns
     -------
@@ -73,7 +76,12 @@ def runFoamCommand(
     """
     logFileName = "log." + foamCommand + addToLogFilename
 
-    command = foamCommand + " " + arguments
+    if beforeCommand != "":
+        command = beforeCommand + " "
+    else:
+        command = ""
+
+    command += foamCommand + " " + arguments
 
     if region != "":
         logFileName += "." + region
