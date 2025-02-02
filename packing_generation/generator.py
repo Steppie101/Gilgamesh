@@ -6,21 +6,17 @@ import numpy as np
 from mathutils import Euler, Vector, Matrix
 import sys
 import os
-import time
 
 file_path = bpy.path.abspath("//")
 sys.path.append(file_path)
 print("Path:", file_path)
 
 import parameters as params
-
 export_path = os.path.join(file_path, params.stl_export_path)
 
-#=======================#=============#========================#
-#-----------------------:  Functions  :------------------------#
-#=======================#=============#========================#
 
 def sanity_check():
+    """Check for potential problems with the user define parameters."""
     problem_found = False
     warning = "\033[91m" + "WARNING" + "\033[00m"
 
@@ -105,9 +101,13 @@ def random_rotation(rng):
     return Euler((alpha, beta, gamma))
 
 def random_scale(rng, mean = 1, deviation = 0, distribution = "NORMAL"):
-    """Return a normally distributed scale vector.
+    """Return a random scale, with choice in distribution.
     
-    mean and std represent the mean and standard deviation of the normal distribution respectively.
+    mean and std represent the mean and standard deviation of the distribution respectively.
+    distribution represents the distribution used for the random samples, with choice from:
+        "UNIFORM"
+        "NORMAL"
+        "LOGNORMAL"
     """
     if deviation == 0:
         return mean
@@ -121,7 +121,14 @@ def random_scale(rng, mean = 1, deviation = 0, distribution = "NORMAL"):
             size = rng.lognormal(mean, deviation)
     return size
 
-def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = 1, name = "None", rescale_factor = 1):
+def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), scale = 1, name = "None"):
+    """Place a particle at predefined location, rotation and scale.
+
+    location is a mathutils Vector representing the x, y and z coordinate.
+    rotation is a mathutils Euler angle in XYZ ordering.
+    scale is a a number representing the relative size.
+    name is the name given to the particle.
+    """
     match params.particle_type:
         case "CUBE":
             bpy.ops.mesh.primitive_cube_add(size = 1)
@@ -138,7 +145,7 @@ def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), sca
             bpy.ops.wm.stl_import(filepath = import_path)
 
     obj = bpy.context.selected_objects[0]
-    obj.matrix_world = Matrix.LocRotScale(location, rotation, max(min(scale * rescale_factor, (min(params.x_size , params.y_size) - 0.1) / np.sqrt(3)), 0.1) * Vector((1, 1, 1)))
+    obj.matrix_world = Matrix.LocRotScale(location, rotation, max(min(scale, (min(params.x_size , params.y_size) - 0.1) / np.sqrt(3)), 0.1) * Vector((1, 1, 1)))
     obj.name = name
 
     bpy.context.view_layer.objects.active = obj
@@ -155,19 +162,27 @@ def generate_particle(location = Vector((0,0,0)), rotation = Euler((0,0,0)), sca
     body.angular_damping = params.angular_damping
 
 def is_inside_boundary(s, size):
+    """Check if a coordinate is within bounds.
+    
+    s represents the coordinate.
+    size represents the wall size against which the coordinate is checked.
+    """
     return np.abs(s) < size / 2
 
 def delete_object(name):
+    """Delete object based on its name."""
     bpy.context.view_layer.objects.active = select_object(name)
     bpy.ops.object.delete()
 
 def select_object(name):
+    """Select object based on its name, set to active and return selected object."""
     bpy.ops.object.select_all(action = "DESELECT")
     obj = bpy.data.objects[name]
     obj.select_set(True)
     return obj
 
 def move_particles():
+    """Move particles outside the middle section to their correct position ensuring periodicity."""
     bpy.ops.object.select_pattern(pattern = "Particle*.__", extend = False)
     bpy.ops.object.select_pattern(pattern = "Plane", extend = True)
     bpy.ops.object.select_all(action = "INVERT")
@@ -196,6 +211,7 @@ def move_particles():
     bpy.ops.rigidbody.object_settings_copy()
 
 def correct_names():
+    """Correct names of particles moving to other sections."""
     bpy.ops.object.select_pattern(pattern = "Particle*.__", extend = False)
     for obj in bpy.context.selected_objects:    
                   
@@ -234,6 +250,7 @@ def correct_names():
             xobj.name = name + "._y"
 
 def reorganize_periodicly():
+    """Enforce periodicity based on the middle section."""
     bpy.ops.object.select_all(action = "SELECT")
     bpy.ops.object.visual_transform_apply()
 
@@ -241,6 +258,7 @@ def reorganize_periodicly():
     correct_names()
 
 def intersect(name1, name2):
+    """Intersect two objects based on their names."""
     obj2 = select_object(name2)
     obj1 = select_object(name1)
     bpy.context.view_layer.objects.active = obj1
@@ -251,6 +269,7 @@ def intersect(name1, name2):
     bpy.ops.object.modifier_apply(modifier = "Boolean")
 
 def export_stl(name):
+    """Export object based on its name."""
     obj = select_object(name)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.wm.stl_export(filepath = export_path, export_selected_objects = True)
@@ -291,11 +310,11 @@ def main():
         if (i % params.spawn_interval == 0):
             rand_loc = random_location(rng, params.x_size, params.y_size, params.spawn_height)
             rand_rot = random_rotation(rng)
-            rand_scale = random_scale(rng, deviation = params.scale_deviation, distribution = params.distribution)
-            generate_particle(rand_loc, rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".__", rescale_factor)
-            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, 0, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".x_", rescale_factor)
-            generate_particle(rand_loc - Vector((0, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + "._y", rescale_factor)
-            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".xy", rescale_factor)
+            rand_scale = random_scale(rng, deviation = params.scale_deviation, distribution = params.distribution) * rescale_factor
+            generate_particle(rand_loc, rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".__")
+            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, 0, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".x_")
+            generate_particle(rand_loc - Vector((0, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + "._y")
+            generate_particle(rand_loc - Vector((np.sign(rand_loc.x) * params.x_size, np.sign(rand_loc.y) * params.y_size, 0)), rand_rot, rand_scale, "Particle.{:03d}".format(n) + ".xy")
             n += 1
 
         fraction = (i / max_iterations) ** 2 * max_iterations / (2 * params.extra_iterations + max_iterations)
