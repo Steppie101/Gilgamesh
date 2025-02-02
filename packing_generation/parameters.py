@@ -18,7 +18,7 @@ spawn_height = 25
 # Total amount of particles
 number_of_particles = 10
 # Percentage particles grow for overlap (NOT including collision margin)
-overlap_size = 0.04
+overlap_size = 0
 
 # <[Shape Parameters]>
 # Particle shapes (CUBE, UVSPHERE, ICOSPHERE, CYLINDER, STL)
@@ -54,11 +54,11 @@ angular_damping = 0.1
 
 # <[Randomization Parameters]>
 # Seed for all random processes  ( 32 bit integer or "RANDOM" )
-seed = 12
+seed = "RANDOM"
 # Distribution for particle size ( UNIFORM, NORMAL, LOGNORMAL )
 distribution = "LOGNORMAL"
 # Standard deviation for particle scale, 
-scale_deviation = 0.02
+scale_deviation = 0
 
 # <[Miscelanious]>
 # Set True to supress any warning. Only recommended for experienced users

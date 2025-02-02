@@ -1,5 +1,7 @@
 # Gilgamesh
 
+An open-source tool for periodic packing generation and mesh refinement for CFD in OpenFOAM.
+
 ## Packing Generation
 This tool was developed using Blender 4.3. Beware that using another version may cause the program to disfunction.
 In order to run the packing generator from a command line, make sure that the current working directory is ```packing_generation```. From here the following command can be run to generate a packing:
@@ -27,6 +29,4 @@ The program does require a series of libraries that should be installed before r
 
 When the program is run, a message asking for the filename should appear. This is the file obtained through the packing generation. The file should be of type ```.stl```. During the program two files containing the volume mesh of the solid and fluid region are created and saved as ```Geometry_Volume_Mesh +date``` and ```Fluid_Volume_Mesh +date```. Intermediate files are removed automatically.
 
-The ```Final_version.py``` file can be used to acces and change parameters for the packing generation.
-
-## Mesh Checking
+The ```Final_version.py``` file can be used to access and change parameters for the packing generation.
