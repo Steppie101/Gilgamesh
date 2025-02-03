@@ -29,4 +29,4 @@ The program does require a series of libraries that should be installed before r
 
 When the program is run, a message asking for the filename should appear. This is the file obtained through the packing generation. The file should be of type ```.stl```. During the program two files containing the volume mesh of the solid and fluid region are created and saved as ```Geometry_Volume_Mesh +date``` and ```Fluid_Volume_Mesh +date```. Intermediate files are removed automatically.
 
-The ```Final_version.py``` file can be used to access and change parameters for the packing generation.
+The ```Final_version.py``` file can be used to access and change parameters for the mesh generation.
